@@ -40,9 +40,9 @@ export default function Cover() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search protocols" className="pl-9 bg-card/50" />
           </div>
-          <FilterGroup label="Category" options={categories} value={cat} onChange={setCat} />
-          <FilterGroup label="Chain" options={chains} value={chain} onChange={setChain} />
-          <FilterGroup label="Risk tier" options={risks} value={risk} onChange={setRisk} />
+          <FilterGroup<(typeof categories)[number]> label="Category" options={categories} value={cat} onChange={setCat} />
+          <FilterGroup<(typeof chains)[number]> label="Chain" options={chains} value={chain} onChange={setChain} />
+          <FilterGroup<(typeof risks)[number]> label="Risk tier" options={risks} value={risk} onChange={setRisk} />
         </aside>
 
         <div>
