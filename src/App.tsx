@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { WagmiProvider } from "wagmi";
-import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
+import { RainbowKitProvider, lightTheme } from "@rainbow-me/rainbowkit";
 import "@rainbow-me/rainbowkit/styles.css";
 
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -23,10 +23,10 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
-const rainbowTheme = darkTheme({
-  accentColor: "hsl(172 100% 45%)",
-  accentColorForeground: "hsl(222 60% 6%)",
-  borderRadius: "medium",
+const rainbowTheme = lightTheme({
+  accentColor: "hsl(345 95% 65%)",
+  accentColorForeground: "hsl(230 30% 8%)",
+  borderRadius: "small",
   fontStack: "system",
   overlayBlur: "small",
 });

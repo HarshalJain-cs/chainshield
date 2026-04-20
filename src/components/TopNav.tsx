@@ -16,54 +16,51 @@ const links = [
 export const TopNav = () => {
   const [open, setOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/70 border-b border-border/60">
-      <nav className="container flex h-16 items-center justify-between gap-4">
-        <div className="flex items-center gap-8">
-          <Logo />
-          <div className="hidden md:flex items-center gap-1">
+    <header className="sticky top-4 z-50 mx-4 md:mx-8">
+      <nav className="window-lg flex h-14 items-center justify-between bg-card">
+        <div className="flex items-center h-full">
+          <div className="px-4 border-r-[1.5px] border-foreground h-full flex items-center">
+            <Logo />
+          </div>
+          <div className="hidden md:flex items-center h-full">
             {links.map((l) => (
               <NavLink
                 key={l.to}
                 to={l.to}
-                className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-smooth"
-                activeClassName="text-foreground bg-muted/60"
+                className="h-full px-4 flex items-center text-xs font-mono font-bold uppercase tracking-wider border-r-[1.5px] border-foreground hover:bg-primary hover:text-primary-foreground transition-smooth gap-2 before:content-[''] before:w-2 before:h-2 before:bg-foreground"
+                activeClassName="bg-primary text-primary-foreground"
               >
                 {l.label}
               </NavLink>
             ))}
-            <a href="https://docs.lovable.dev" target="_blank" rel="noreferrer" className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-smooth">
-              Docs
-            </a>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:block">
+        <div className="flex items-center h-full">
+          <div className="hidden sm:flex items-center px-3 h-full border-l-[1.5px] border-foreground">
             <ConnectButton showBalance={false} chainStatus="icon" accountStatus={{ smallScreen: "avatar", largeScreen: "full" }} />
           </div>
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen((v) => !v)} aria-label="Toggle menu">
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          <button className="md:hidden h-full px-4 border-l-[1.5px] border-foreground" onClick={() => setOpen((v) => !v)} aria-label="Toggle menu">
+            {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
         </div>
       </nav>
 
       {open && (
-        <div className="md:hidden border-t border-border/60 bg-background/95 backdrop-blur-xl">
-          <div className="container py-3 flex flex-col gap-1">
-            {links.map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                onClick={() => setOpen(false)}
-                className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground"
-                activeClassName="text-foreground bg-muted/60"
-              >
-                {l.label}
-              </NavLink>
-            ))}
-            <div className="pt-2 sm:hidden">
-              <ConnectButton showBalance={false} />
-            </div>
+        <div className="md:hidden window-lg mt-2 bg-card overflow-hidden">
+          {links.map((l) => (
+            <NavLink
+              key={l.to}
+              to={l.to}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-3 text-xs font-mono font-bold uppercase tracking-wider border-b-[1.5px] border-foreground last:border-b-0"
+              activeClassName="bg-primary text-primary-foreground"
+            >
+              {l.label}
+            </NavLink>
+          ))}
+          <div className="p-3 sm:hidden border-t-[1.5px] border-foreground">
+            <ConnectButton showBalance={false} />
           </div>
         </div>
       )}

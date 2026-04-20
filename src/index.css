@@ -2,133 +2,189 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ChainShield design system — dark cyber-finance.
+/* ChainShield design system — Tavus-inspired light retro.
+   Pastel sky, dithered noise, big serif, boxy black-bordered windows.
    All colors MUST be HSL. */
 
 @layer base {
   :root {
-    /* Core surfaces — near-black base with cool tint */
-    --background: 222 40% 5%;
-    --foreground: 180 25% 96%;
+    /* Pastel sky cream background, near-black ink */
+    --background: 40 30% 96%;
+    --foreground: 230 30% 8%;
 
-    --card: 222 38% 7%;
-    --card-foreground: 180 25% 96%;
+    --card: 0 0% 100%;
+    --card-foreground: 230 30% 8%;
 
-    --popover: 222 42% 6%;
-    --popover-foreground: 180 25% 96%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 230 30% 8%;
 
-    /* Electric teal — signature accent */
-    --primary: 172 100% 45%;
-    --primary-foreground: 222 60% 6%;
-    --primary-glow: 172 100% 60%;
+    /* Hot pink — primary accent */
+    --primary: 345 95% 65%;
+    --primary-foreground: 230 30% 8%;
+    --primary-glow: 345 100% 75%;
 
-    --secondary: 222 30% 12%;
-    --secondary-foreground: 180 25% 96%;
+    /* Neon green — secondary accent */
+    --secondary: 140 75% 60%;
+    --secondary-foreground: 230 30% 8%;
 
-    --muted: 222 25% 11%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 220 25% 92%;
+    --muted-foreground: 230 15% 35%;
 
-    --accent: 220 100% 60%;       /* electric blue */
-    --accent-foreground: 222 60% 6%;
+    --accent: 220 90% 65%;        /* sky blue */
+    --accent-foreground: 230 30% 8%;
 
-    --gold: 42 95% 60%;
-    --violet: 265 85% 65%;
-    --success: 152 75% 45%;
-    --warning: 38 95% 58%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --success: 140 75% 45%;
+    --warning: 38 95% 55%;
+    --destructive: 350 85% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 30% 14%;
-    --input: 220 30% 14%;
-    --ring: 172 100% 45%;
+    /* Hard black border — defining trait */
+    --border: 230 30% 8%;
+    --input: 230 30% 8%;
+    --ring: 345 95% 65%;
 
-    --radius: 0.875rem;
+    --radius: 0.25rem;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(172 100% 45%), hsl(195 100% 55%));
-    --gradient-hero: radial-gradient(ellipse 80% 60% at 50% 0%, hsl(172 100% 45% / 0.18), transparent 60%),
-                     radial-gradient(ellipse 60% 50% at 80% 30%, hsl(265 85% 65% / 0.12), transparent 70%),
-                     radial-gradient(ellipse 50% 40% at 10% 70%, hsl(220 100% 60% / 0.10), transparent 70%);
-    --gradient-card: linear-gradient(180deg, hsl(222 38% 9% / 0.8), hsl(222 38% 6% / 0.6));
+    /* Sky gradient + retro halftone */
+    --gradient-sky: linear-gradient(180deg, hsl(220 90% 85%) 0%, hsl(280 70% 88%) 45%, hsl(330 85% 90%) 100%);
+    --gradient-pink: linear-gradient(135deg, hsl(345 95% 70%), hsl(330 90% 75%));
 
-    /* Shadows / glow */
-    --shadow-glow: 0 0 40px hsl(172 100% 45% / 0.35);
-    --shadow-elegant: 0 20px 60px -20px hsl(172 100% 45% / 0.25);
-    --shadow-card: 0 1px 0 0 hsl(180 25% 96% / 0.04) inset, 0 8px 30px -12px hsl(0 0% 0% / 0.6);
+    /* Window shadow — hard offset for retro feel */
+    --shadow-window: 6px 6px 0 0 hsl(230 30% 8%);
+    --shadow-window-sm: 4px 4px 0 0 hsl(230 30% 8%);
+    --shadow-window-hover: 10px 10px 0 0 hsl(230 30% 8%);
 
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
     /* Sidebar (kept for shadcn) */
-    --sidebar-background: 222 42% 6%;
-    --sidebar-foreground: 180 20% 90%;
-    --sidebar-primary: 172 100% 45%;
-    --sidebar-primary-foreground: 222 60% 6%;
-    --sidebar-accent: 222 30% 12%;
-    --sidebar-accent-foreground: 180 25% 96%;
-    --sidebar-border: 220 30% 14%;
-    --sidebar-ring: 172 100% 45%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 230 30% 8%;
+    --sidebar-primary: 345 95% 65%;
+    --sidebar-primary-foreground: 230 30% 8%;
+    --sidebar-accent: 220 25% 92%;
+    --sidebar-accent-foreground: 230 30% 8%;
+    --sidebar-border: 230 30% 8%;
+    --sidebar-ring: 345 95% 65%;
   }
-
-  /* Force dark — ChainShield is dark-only */
-  .dark { color-scheme: dark; }
 }
 
 @layer base {
   * { @apply border-border; }
 
-  html { color-scheme: dark; }
+  html { color-scheme: light; }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'IBM Plex Sans', system-ui, sans-serif;
-    background-image:
-      radial-gradient(ellipse 90% 50% at 50% -10%, hsl(172 100% 45% / 0.08), transparent 60%),
-      linear-gradient(180deg, hsl(222 40% 5%), hsl(222 45% 4%));
-    background-attachment: fixed;
+    font-family: 'Inter', system-ui, sans-serif;
   }
 
   h1, h2, h3, h4, .font-display {
-    font-family: 'Syne', system-ui, sans-serif;
-    letter-spacing: -0.02em;
+    font-family: 'DM Serif Display', Georgia, serif;
+    letter-spacing: -0.01em;
+    font-weight: 400;
   }
 
   .font-mono, code, pre {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
 
-  /* Subtle grid backdrop utility */
-  .bg-grid {
+  /* Halftone dot noise — Tavus signature */
+  .bg-noise {
     background-image:
-      linear-gradient(hsl(180 25% 96% / 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(180 25% 96% / 0.04) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black, transparent 80%);
+      radial-gradient(circle at 1px 1px, hsl(230 30% 8% / 0.18) 1px, transparent 0);
+    background-size: 4px 4px;
   }
 
-  .glass {
-    background: var(--gradient-card);
-    backdrop-filter: blur(12px);
-    border: 1px solid hsl(180 25% 96% / 0.06);
-    box-shadow: var(--shadow-card);
+  .bg-sky-noise {
+    background: var(--gradient-sky);
+    position: relative;
+  }
+  .bg-sky-noise::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 1px 1px, hsl(230 30% 8% / 0.15) 1px, transparent 0);
+    background-size: 3px 3px;
+    mix-blend-mode: multiply;
+    opacity: 0.6;
+  }
+
+  /* Window-frame card — retro OS/Bauhaus look */
+  .window {
+    background: hsl(var(--card));
+    border: 1.5px solid hsl(var(--border));
+    box-shadow: var(--shadow-window-sm);
+    border-radius: var(--radius);
+    position: relative;
+  }
+
+  .window-lg {
+    background: hsl(var(--card));
+    border: 2px solid hsl(var(--border));
+    box-shadow: var(--shadow-window);
+    border-radius: var(--radius);
+  }
+
+  /* Window title bar — striped header */
+  .window-bar {
+    border-bottom: 1.5px solid hsl(var(--border));
+    background-image: repeating-linear-gradient(
+      90deg,
+      hsl(var(--border)) 0 1px,
+      transparent 1px 4px
+    );
+    height: 14px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    gap: 6px;
   }
 
   .text-gradient {
-    background: var(--gradient-primary);
+    background: var(--gradient-pink);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
+
+  /* Inline tag chip — pink/green block */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1.5px solid hsl(var(--border));
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  .chip::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: hsl(var(--border));
+  }
 }
 
 @layer utilities {
-  .glow-primary { box-shadow: var(--shadow-glow); }
+  .shadow-window { box-shadow: var(--shadow-window); }
+  .shadow-window-sm { box-shadow: var(--shadow-window-sm); }
+  .hover-lift { transition: var(--transition-smooth); }
+  .hover-lift:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-window-hover); }
+
   .transition-smooth { transition: var(--transition-smooth); }
 
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 hsl(172 100% 45% / 0.5); }
-    50% { box-shadow: 0 0 0 8px hsl(172 100% 45% / 0); }
+  @keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0.2; }
   }
-  .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+  .animate-blink { animation: blink 1.2s step-end infinite; }
 
   @keyframes marquee {
     0% { transform: translateX(0); }
