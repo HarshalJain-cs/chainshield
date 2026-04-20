@@ -11,7 +11,7 @@ export const Footer = () => (
         <div className="space-y-3">
           <Logo />
           <p className="text-sm text-muted-foreground max-w-xs">
-            Onchain insurance for DeFi. Cover, claims & governance — all onchain.
+            One wallet. Every kind of cover. Health, auto, life, travel, finance and DeFi — all onchain.
           </p>
         </div>
         <FooterCol title="Product" links={[

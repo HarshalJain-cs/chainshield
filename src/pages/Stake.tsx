@@ -1,45 +1,64 @@
 import { useState } from "react";
-import { pools, protocols, fmtUsd } from "@/lib/mock/data";
+import { pools, products, lineMeta, fmtUsd, type Pool } from "@/lib/mock/data";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TrendingUp } from "lucide-react";
 import { Window } from "@/components/Window";
 
+const poolTypes = ["All", "DeFi", "Health", "Auto", "Life", "Mixed"] as const;
+
 export default function Stake() {
+  const [filter, setFilter] = useState<(typeof poolTypes)[number]>("All");
+  const filtered = pools.filter((p) => filter === "All" || p.poolType === filter);
+
   return (
-    <div className="container py-10 space-y-10">
+    <div className="container py-10 space-y-8">
       <div>
         <span className="chip mb-2">Earn</span>
         <h1 className="font-display text-5xl md:text-7xl">Earn yield.</h1>
-        <p className="text-foreground/70 mt-3 text-lg">Underwrite cover pools. Earn premiums + protocol incentives.</p>
+        <p className="text-foreground/70 mt-3 text-lg">Underwrite cover pools across every line. Earn premiums + protocol incentives.</p>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5 border-b-[1.5px] border-foreground pb-4">
+        {poolTypes.map((t) => (
+          <button
+            key={t}
+            onClick={() => setFilter(t)}
+            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase border-[1.5px] border-foreground transition-smooth ${
+              filter === t ? "bg-primary text-primary-foreground shadow-window-sm" : "bg-card hover:bg-muted"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {pools.map((pool) => {
-          const proto = protocols.find((p) => p.id === pool.protocolId)!;
-          return <PoolCard key={pool.id} pool={pool} proto={proto} />;
+        {filtered.map((pool) => {
+          const product = products.find((p) => p.id === pool.productId)!;
+          return <PoolCard key={pool.id} pool={pool} product={product} />;
         })}
       </div>
     </div>
   );
 }
 
-function PoolCard({ pool, proto }: { pool: (typeof pools)[number]; proto: (typeof protocols)[number] }) {
+function PoolCard({ pool, product }: { pool: Pool; product: (typeof products)[number] }) {
   const [amount, setAmount] = useState(1000);
   const [tab, setTab] = useState<"stake" | "unstake">("stake");
   const projected = (amount * pool.apy) / 100;
 
   return (
-    <Window title={pool.id} tag="pool" tagColor="secondary" hover>
+    <Window title={pool.id} tag={pool.poolType} tagColor={pool.poolType === "Mixed" ? "primary" : "secondary"} hover>
       <div className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <span className="w-11 h-11 border-[1.5px] border-foreground flex items-center justify-center font-mono font-bold text-xs" style={{ background: `hsl(${proto.color} / 0.4)` }}>
-              {proto.symbol.slice(0, 3)}
+            <span className="w-11 h-11 border-[1.5px] border-foreground flex items-center justify-center font-mono font-bold text-xs" style={{ background: `hsl(${product.color} / 0.4)` }}>
+              {product.symbol.slice(0, 3)}
             </span>
             <div>
-              <div className="font-display text-xl">{proto.name}</div>
-              <div className="text-[10px] font-mono uppercase text-muted-foreground">{proto.chain}</div>
+              <div className="font-display text-lg">{pool.name}</div>
+              <div className="text-[10px] font-mono uppercase text-muted-foreground">{lineMeta[product.line].label} · {pool.acceptedTokens.join(", ")}</div>
             </div>
           </div>
           <div className="text-right">
