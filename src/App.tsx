@@ -23,10 +23,11 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
-const rainbowTheme = darkTheme({
-  accentColor: "hsl(172 100% 45%)",
-  accentColorForeground: "hsl(222 60% 6%)",
-  borderRadius: "medium",
+import { lightTheme } from "@rainbow-me/rainbowkit";
+const rainbowTheme = lightTheme({
+  accentColor: "hsl(345 95% 65%)",
+  accentColorForeground: "hsl(230 30% 8%)",
+  borderRadius: "small",
   fontStack: "system",
   overlayBlur: "small",
 });

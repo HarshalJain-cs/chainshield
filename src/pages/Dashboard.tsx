@@ -5,6 +5,7 @@ import { policies, claims, pools, protocols, fmtUsd } from "@/lib/mock/data";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "react-router-dom";
+import { Window } from "@/components/Window";
 
 export default function Dashboard() {
   const { isConnected, address } = useAccount();
@@ -12,11 +13,15 @@ export default function Dashboard() {
   if (!isConnected) {
     return (
       <div className="container py-24">
-        <div className="glass rounded-3xl p-12 text-center max-w-xl mx-auto">
-          <Wallet className="h-10 w-10 text-primary mx-auto mb-4" />
-          <h1 className="font-display text-3xl font-bold mb-2">Connect your wallet</h1>
-          <p className="text-muted-foreground mb-6">Sign in to view your active cover, claims and LP positions.</p>
-          <div className="flex justify-center"><ConnectButton /></div>
+        <div className="max-w-xl mx-auto">
+          <Window title="auth.required" tag="connect" tagColor="primary" large>
+            <div className="p-12 text-center">
+              <Wallet className="h-10 w-10 mx-auto mb-4" />
+              <h1 className="font-display text-4xl mb-2">Connect your wallet</h1>
+              <p className="text-foreground/70 mb-6">Sign in to view your active cover, claims and LP positions.</p>
+              <div className="flex justify-center"><ConnectButton /></div>
+            </div>
+          </Window>
         </div>
       </div>
     );
@@ -28,15 +33,16 @@ export default function Dashboard() {
   const lpValue = myPools.reduce((s, p) => s + (p.myStakeUsd || 0), 0);
 
   return (
-    <div className="container py-12 space-y-10">
+    <div className="container py-10 space-y-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground font-mono text-sm mt-1">{address?.slice(0, 6)}…{address?.slice(-4)}</p>
+          <span className="chip mb-2">Account</span>
+          <h1 className="font-display text-5xl md:text-6xl">Dashboard.</h1>
+          <p className="text-foreground/70 font-mono text-sm mt-2">{address?.slice(0, 6)}…{address?.slice(-4)}</p>
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline"><Link to="/claims">File claim</Link></Button>
-          <Button asChild className="bg-primary text-primary-foreground"><Link to="/cover">Buy cover</Link></Button>
+          <Button asChild><Link to="/cover">Buy cover</Link></Button>
         </div>
       </div>
 
@@ -48,11 +54,11 @@ export default function Dashboard() {
       </div>
 
       <section>
-        <h2 className="font-display text-2xl font-bold mb-4">Active policies</h2>
-        <div className="glass rounded-2xl overflow-hidden">
+        <h2 className="font-display text-3xl mb-4">Active policies</h2>
+        <Window title="policies.table" tag="table" tagColor="muted">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="border-foreground">
                 <TableHead>ID</TableHead>
                 <TableHead>Protocol</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
@@ -66,7 +72,7 @@ export default function Dashboard() {
               {myPolicies.map((p) => {
                 const proto = protocols.find((x) => x.id === p.protocolId)!;
                 return (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className="border-foreground/20">
                     <TableCell className="font-mono text-xs">{p.id}</TableCell>
                     <TableCell><span className="font-medium">{proto.name}</span></TableCell>
                     <TableCell className="text-right font-mono">{fmtUsd(p.amountUsd)}</TableCell>
@@ -81,24 +87,26 @@ export default function Dashboard() {
               })}
             </TableBody>
           </Table>
-        </div>
+        </Window>
       </section>
 
       <section>
-        <h2 className="font-display text-2xl font-bold mb-4">LP positions</h2>
+        <h2 className="font-display text-3xl mb-4">LP positions</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {myPools.map((pool) => {
             const proto = protocols.find((x) => x.id === pool.protocolId)!;
             return (
-              <div key={pool.id} className="glass rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="font-display font-semibold">{proto.name}</div>
-                  <span className="font-mono text-primary text-sm">{pool.apy}% APY</span>
+              <Window key={pool.id} title={pool.id} tag="pool" tagColor="secondary" hover>
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="font-display text-xl">{proto.name}</div>
+                    <span className="px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase border-[1.5px] border-foreground bg-secondary">{pool.apy}% APY</span>
+                  </div>
+                  <div className="font-display text-3xl">${pool.myStakeUsd?.toLocaleString()}</div>
+                  <div className="text-[10px] font-mono uppercase text-muted-foreground mt-1">Your stake</div>
+                  <Button size="sm" variant="outline" className="mt-4 w-full">Manage</Button>
                 </div>
-                <div className="text-2xl font-mono font-bold">${pool.myStakeUsd?.toLocaleString()}</div>
-                <div className="text-xs text-muted-foreground mt-1">Your stake</div>
-                <Button size="sm" variant="outline" className="mt-4 w-full">Manage</Button>
-              </div>
+              </Window>
             );
           })}
         </div>
@@ -109,23 +117,25 @@ export default function Dashboard() {
 
 function KPI({ icon: Icon, label, value, accent }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; accent?: boolean }) {
   return (
-    <div className="glass rounded-2xl p-5">
-      <Icon className={`h-4 w-4 mb-2 ${accent ? "text-primary" : "text-muted-foreground"}`} />
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`font-mono text-2xl font-bold ${accent ? "text-primary" : ""}`}>{value}</div>
-    </div>
+    <Window title={label.toLowerCase().replace(" ", "_")} tag="kpi" tagColor={accent ? "primary" : "muted"}>
+      <div className="p-5">
+        <Icon className={`h-4 w-4 mb-2 ${accent ? "text-primary" : ""}`} />
+        <div className="font-display text-3xl">{value}</div>
+        <div className="text-[10px] font-mono uppercase text-muted-foreground mt-1">{label}</div>
+      </div>
+    </Window>
   );
 }
 
 export function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    Active: "bg-success/15 text-success border-success/30",
-    Expired: "bg-muted text-muted-foreground border-border",
-    Claimed: "bg-primary/15 text-primary border-primary/30",
-    Voting: "bg-warning/15 text-warning border-warning/30",
-    Pending: "bg-warning/15 text-warning border-warning/30",
-    Approved: "bg-success/15 text-success border-success/30",
-    Rejected: "bg-destructive/15 text-destructive border-destructive/30",
+    Active: "bg-secondary text-foreground",
+    Expired: "bg-muted text-foreground",
+    Claimed: "bg-primary text-primary-foreground",
+    Voting: "bg-[hsl(var(--warning))] text-foreground",
+    Pending: "bg-[hsl(var(--warning))] text-foreground",
+    Approved: "bg-secondary text-foreground",
+    Rejected: "bg-destructive text-destructive-foreground",
   };
-  return <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase border ${map[status] || ""}`}>{status}</span>;
+  return <span className={`px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase border-[1.5px] border-foreground ${map[status] || ""}`}>{status}</span>;
 }
