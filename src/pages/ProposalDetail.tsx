@@ -36,9 +36,9 @@ export default function ProposalDetail() {
           <div className="mt-8 space-y-4 text-foreground/80">
             <p>{p.summary}</p>
             <h3 className="font-display text-2xl text-foreground mt-6">Rationale</h3>
-            <p>This proposal aims to evolve ChainShield's risk parameters in line with current market conditions and community feedback collected over the past quarter.</p>
+            <p>This proposal aims to evolve ChainShield's risk parameters across all coverage lines, in line with current market conditions and community feedback collected over the past quarter.</p>
             <h3 className="font-display text-2xl text-foreground mt-6">Implementation</h3>
-            <p>If passed, the change will activate after a 48-hour timelock and be deployed to all supported chains.</p>
+            <p>If passed, the change will activate after a 48-hour timelock and apply to all affected pools and products.</p>
           </div>
         </div>
 
