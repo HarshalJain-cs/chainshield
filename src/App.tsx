@@ -14,6 +14,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index.tsx";
 import Cover from "./pages/Cover.tsx";
 import CoverDetail from "./pages/CoverDetail.tsx";
+import CoverLine from "./pages/CoverLine.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Claims from "./pages/Claims.tsx";
 import Stake from "./pages/Stake.tsx";
@@ -43,6 +44,7 @@ const App = () => (
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Index />} />
                 <Route path="/cover" element={<Cover />} />
+                <Route path="/cover/line/:line" element={<CoverLine />} />
                 <Route path="/cover/:id" element={<CoverDetail />} />
                 <Route path="/app" element={<Dashboard />} />
                 <Route path="/claims" element={<Claims />} />

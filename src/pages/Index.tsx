@@ -182,7 +182,7 @@ export default function Index() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.06 }}
               >
-                <Link to={`/cover?line=${line}`} className="block group">
+                <Link to={`/cover/line/${line}`} className="block group">
                   <Window title={`line_${line}`} tag={meta.label} tagColor={i % 2 === 0 ? "primary" : "secondary"} hover className="h-full">
                     <div className="p-6">
                       <div className="w-12 h-12 border-[1.5px] border-foreground flex items-center justify-center mb-5" style={{ background: `hsl(${meta.color} / 0.4)` }}>
