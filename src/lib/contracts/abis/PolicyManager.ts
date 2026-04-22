@@ -1,0 +1,70 @@
+// Mock PolicyManager ABI — mirrors real Solidity contract interface
+// Replace with actual compiled ABI when contracts are deployed
+export const POLICY_MANAGER_ABI = [
+  {
+    name: "purchasePolicy",
+    type: "function",
+    stateMutability: "payable",
+    inputs: [
+      { name: "_coverageType", type: "uint8" },
+      { name: "_coverageAmount", type: "uint256" },
+      { name: "_durationMonths", type: "uint256" },
+      { name: "_premiumToken", type: "address" },
+      { name: "_autoRenew", type: "bool" },
+      { name: "_poolId", type: "uint256" },
+      { name: "_metadata", type: "bytes" },
+    ],
+    outputs: [{ name: "policyId", type: "uint256" }],
+  },
+  {
+    name: "calculatePremium",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "coverageType", type: "uint8" },
+      { name: "coverageAmount", type: "uint256" },
+      { name: "token", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "getUserPolicies",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "uint256[]" }],
+  },
+  {
+    name: "policies",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "policyId", type: "uint256" }],
+    outputs: [
+      { name: "id", type: "uint256" },
+      { name: "policyholder", type: "address" },
+      { name: "coverageType", type: "uint8" },
+      { name: "coverageAmount", type: "uint256" },
+      { name: "premiumAmount", type: "uint256" },
+      { name: "premiumToken", type: "address" },
+      { name: "startDate", type: "uint256" },
+      { name: "endDate", type: "uint256" },
+      { name: "autoRenew", type: "bool" },
+      { name: "status", type: "uint8" },
+      { name: "poolId", type: "uint256" },
+      { name: "metadataHash", type: "bytes32" },
+    ],
+  },
+  {
+    name: "PolicyCreated",
+    type: "event",
+    inputs: [
+      { name: "policyId", type: "uint256", indexed: true },
+      { name: "owner", type: "address", indexed: true },
+      { name: "coverageType", type: "uint8", indexed: false },
+      { name: "coverageAmount", type: "uint256", indexed: false },
+      { name: "premium", type: "uint256", indexed: false },
+      { name: "startDate", type: "uint256", indexed: false },
+      { name: "endDate", type: "uint256", indexed: false },
+    ],
+  },
+] as const;

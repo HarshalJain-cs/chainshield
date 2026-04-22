@@ -10,7 +10,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
-const frequencies: PaymentFrequency[] = ["monthly", "quarterly", "yearly", "one-time"];
+import { usePurchasePolicy } from "@/hooks/usePurchasePolicy";
+import { TxStatusModal } from "@/components/web3/TxStatusModal";
+
+const frequencies: PaymentFrequency[] = ["monthly", "quarterly", "yearly", "one_time"];
 
 export default function CoverDetail() {
   const { id } = useParams();
@@ -28,6 +31,9 @@ export default function CoverDetail() {
   const [beneficiaryShare, setBeneficiaryShare] = useState(100);
   const [open, setOpen] = useState(false);
   const { isConnected } = useAccount();
+
+  const { purchase, txStatus, txHash, reset } = usePurchasePolicy();
+  const [showTx, setShowTx] = useState(false);
 
   const quote = useMemo(() => {
     if (!product) return { amount: 0, label: "" };
@@ -60,6 +66,41 @@ export default function CoverDetail() {
     }
   }, [product, amount, days, age, vehicleValue, tripCost, tripDays]);
 
+  const handlePurchase = async () => {
+    if (!product) return;
+    setOpen(false);
+    setShowTx(true);
+
+    try {
+      let coverageType = product.line === "defi" ? "defi_smart_contract" :
+                         product.line === "health" ? "health_standard" :
+                         product.line === "life" ? "life_term" :
+                         product.line === "auto" ? "auto_full" :
+                         product.line === "travel" ? "travel_basic" : "finance_wallet";
+
+      let durationMonths = product.line === "defi" ? Math.ceil(days / 30) :
+                           product.line === "travel" ? 1 : 12;
+
+      let coverageAmountUsd = product.line === "defi" || product.line === "finance" ? parseFloat(amount) :
+                              product.line === "auto" ? vehicleValue : 
+                              product.line === "health" ? 250_000 : 500_000;
+
+      await purchase({
+        coverageType,
+        coverageAmountUsd,
+        premiumAmountUsd: quote.amount,
+        premiumToken: "USDC",
+        paymentFrequency: frequency as any,
+        autoRenew: false,
+        productId: product.id,
+        durationMonths,
+        beneficiaries: product.line === "life" && beneficiary ? [{ name: "Beneficiary", wallet: beneficiary, share: beneficiaryShare }] : undefined,
+      });
+    } catch (e) {
+      // modal handles error
+    }
+  };
+
   if (!product) {
     return (
       <div className="container py-20 text-center">
@@ -73,6 +114,15 @@ export default function CoverDetail() {
 
   return (
     <div className="container py-10 max-w-6xl">
+      <TxStatusModal
+        open={showTx && txStatus !== "idle"}
+        onClose={() => { setShowTx(false); reset(); }}
+        status={txStatus}
+        txHash={txHash}
+        title="Purchasing Cover"
+        successMessage="Your policy has been successfully issued."
+      />
+
       <Link to="/cover" className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase mb-6 hover:text-primary">
         <ArrowLeft className="h-4 w-4" /> Back to marketplace
       </Link>
@@ -179,14 +229,14 @@ export default function CoverDetail() {
                 <Field label="Payment frequency">
                   <div className="flex gap-1.5 flex-wrap">
                     {frequencies.map((f) => (
-                      <button key={f} onClick={() => setFrequency(f)} className={`px-2 py-1 text-[11px] font-mono font-bold uppercase border-[1.5px] border-foreground transition-smooth ${frequency === f ? "bg-primary text-primary-foreground shadow-window-sm" : "bg-card hover:bg-muted"}`}>{f}</button>
+                      <button key={f} onClick={() => setFrequency(f)} className={`px-2 py-1 text-[11px] font-mono font-bold uppercase border-[1.5px] border-foreground transition-smooth ${frequency === f ? "bg-primary text-primary-foreground shadow-window-sm" : "bg-card hover:bg-muted"}`}>{f.replace("_", "-")}</button>
                     ))}
                   </div>
                 </Field>
 
                 <div className="border-[1.5px] border-foreground bg-muted/40 p-4 space-y-2 mt-4">
                   <Row label="Product" value={product.tier} />
-                  <Row label="Frequency" value={frequency} />
+                  <Row label="Frequency" value={frequency.replace("_", "-")} />
                   <div className="border-t-[1.5px] border-foreground my-2" />
                   <div className="flex justify-between items-baseline">
                     <span className="text-xs font-mono uppercase">Quote</span>
@@ -195,7 +245,7 @@ export default function CoverDetail() {
                   <div className="text-[10px] font-mono uppercase text-muted-foreground text-right">{quote.label}</div>
                 </div>
 
-                <Button size="lg" className="w-full mt-4" onClick={() => setOpen(true)}>
+                <Button size="lg" className="w-full mt-4" onClick={() => setOpen(true)} disabled={!isConnected}>
                   Buy cover
                 </Button>
                 {!isConnected && (
@@ -216,14 +266,14 @@ export default function CoverDetail() {
           <div className="space-y-2 py-2 border-y-[1.5px] border-foreground">
             <Row label="Product" value={product.name} />
             <Row label="Line" value={lineLabel} />
-            <Row label="Frequency" value={frequency} />
+            <Row label="Frequency" value={frequency.replace("_", "-")} />
             <Row label="Quote" value={`$${quote.amount.toFixed(2)}`} />
             {product.line === "life" && beneficiary && <Row label="Beneficiary" value={`${beneficiary.slice(0,6)}… (${beneficiaryShare}%)`} />}
           </div>
           <DialogFooter>
             {isConnected ? (
-              <Button className="w-full" onClick={() => setOpen(false)}>
-                Sign transaction (demo)
+              <Button className="w-full" onClick={handlePurchase}>
+                Sign transaction onchain
               </Button>
             ) : (
               <div className="w-full flex justify-center"><ConnectButton /></div>

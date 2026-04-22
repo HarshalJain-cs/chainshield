@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { WagmiProvider } from "wagmi";
-import { RainbowKitProvider, lightTheme } from "@rainbow-me/rainbowkit";
+import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import "@rainbow-me/rainbowkit/styles.css";
 
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -10,6 +10,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { wagmiConfig } from "@/lib/wagmi";
 import { AppLayout } from "@/components/AppLayout";
+import { WalletAuthProvider } from "@/components/web3/WalletAuthProvider";
+
 
 import Index from "./pages/Index.tsx";
 import Cover from "./pages/Cover.tsx";
@@ -24,9 +26,9 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
-const rainbowTheme = lightTheme({
-  accentColor: "hsl(345 95% 65%)",
-  accentColorForeground: "hsl(230 30% 8%)",
+const rainbowTheme = darkTheme({
+  accentColor: "#00E5CC",
+  accentColorForeground: "#080B14",
   borderRadius: "small",
   fontStack: "system",
   overlayBlur: "small",
@@ -36,9 +38,10 @@ const App = () => (
   <WagmiProvider config={wagmiConfig}>
     <QueryClientProvider client={queryClient}>
       <RainbowKitProvider theme={rainbowTheme} modalSize="compact">
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
+        <WalletAuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
           <BrowserRouter>
             <Routes>
               <Route element={<AppLayout />}>
@@ -56,10 +59,12 @@ const App = () => (
               </Route>
             </Routes>
           </BrowserRouter>
-        </TooltipProvider>
+          </TooltipProvider>
+        </WalletAuthProvider>
       </RainbowKitProvider>
     </QueryClientProvider>
   </WagmiProvider>
 );
+
 
 export default App;

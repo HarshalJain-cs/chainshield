@@ -1,14 +1,59 @@
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { Wallet, ShieldCheck, Coins, FileWarning } from "lucide-react";
-import { policies, claims, pools, products, premiums, lineMeta, fmtUsd, type CoverageLine } from "@/lib/mock/data";
+import { Wallet, ShieldCheck, Coins, FileWarning, Loader2, Plus } from "lucide-react";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { products, lineMeta, fmtUsd, type CoverageLine } from "@/lib/mock/data";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "react-router-dom";
 import { Window } from "@/components/Window";
+import { useUserPolicies } from "@/hooks/useUserPolicies";
+import { useUserClaims } from "@/hooks/useClaims";
+import { useUserPositions } from "@/hooks/useUserPositions";
+import { toast } from "@/hooks/use-toast";
+
+// Coverage type → product ID mapping
+const coverageTypeToProductId: Record<string, string> = {
+  defi_smart_contract: "aave",
+  defi_protocol_hack: "uniswap",
+  defi_oracle_failure: "lido",
+  health_basic: "health-basic",
+  health_standard: "health-std",
+  health_premium: "health-prem",
+  life_term: "life-term-20",
+  auto_liability: "auto-liability",
+  auto_full: "auto-full",
+  auto_ev: "auto-ev",
+  finance_wallet: "fin-wallet",
+  finance_cex: "fin-cex",
+  travel_basic: "travel-basic",
+  travel_medical: "travel-medical",
+};
+
+const coverageTypeToLine: Record<string, CoverageLine> = {
+  defi_smart_contract: "defi",
+  defi_protocol_hack: "defi",
+  defi_oracle_failure: "defi",
+  health_basic: "health",
+  health_standard: "health",
+  health_premium: "health",
+  life_term: "life",
+  auto_liability: "auto",
+  auto_full: "auto",
+  auto_ev: "auto",
+  finance_wallet: "finance",
+  finance_cex: "finance",
+  travel_basic: "travel",
+  travel_medical: "travel",
+};
 
 export default function Dashboard() {
   const { isConnected, address } = useAccount();
+  const { policies, isLoading: policiesLoading } = useUserPolicies();
+  const { claims } = useUserClaims();
+  const { positions } = useUserPositions();
+  const seedDatabase = useMutation(api.seed.seedDatabase);
 
   if (!isConnected) {
     return (
@@ -27,13 +72,26 @@ export default function Dashboard() {
     );
   }
 
-  const myPolicies = policies;
-  const myPools = pools.filter((p) => p.myStakeUsd);
-  const portfolioCover = myPolicies.filter((p) => p.status === "Active").reduce((s, p) => s + p.amountUsd, 0);
-  const lpValue = myPools.reduce((s, p) => s + (p.myStakeUsd || 0), 0);
+  const activePolicies = policies.filter((p) => p.status === "active");
+  const portfolioCover = activePolicies.reduce((s, p) => s + p.coverageAmountUsd, 0);
+  const lpValue = positions.reduce((s, p) => s + p.depositedAmountUsd, 0);
+  const openClaims = claims.filter((c) =>
+    ["Submitted", "Oracle check", "Manual review"].includes(c.status)
+  ).length;
 
-  // Group by line
-  const lines = Array.from(new Set(myPolicies.map((p) => p.coverageType))) as CoverageLine[];
+  // Group active policies by coverage line
+  const lines = Array.from(
+    new Set(activePolicies.map((p) => coverageTypeToLine[p.coverageType] ?? "defi"))
+  ) as CoverageLine[];
+
+  const handleSeed = async () => {
+    try {
+      await seedDatabase({ walletAddress: address });
+      toast({ title: "✅ Demo data loaded", description: "Policies, claims and pools have been seeded." });
+    } catch (e: any) {
+      toast({ title: "Seed failed", description: e.message, variant: "destructive" });
+    }
+  };
 
   return (
     <div className="container py-10 space-y-10">
@@ -43,7 +101,12 @@ export default function Dashboard() {
           <h1 className="font-display text-5xl md:text-6xl">Dashboard.</h1>
           <p className="text-foreground/70 font-mono text-sm mt-2">{address?.slice(0, 6)}…{address?.slice(-4)}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {policies.length === 0 && (
+            <Button variant="outline" onClick={handleSeed}>
+              <Plus className="h-4 w-4 mr-1" /> Load Demo Data
+            </Button>
+          )}
           <Button asChild variant="outline"><Link to="/claims">File claim</Link></Button>
           <Button asChild><Link to="/cover">Buy cover</Link></Button>
         </div>
@@ -51,109 +114,109 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KPI icon={ShieldCheck} label="Active cover" value={fmtUsd(portfolioCover)} accent />
-        <KPI icon={FileWarning} label="Open claims" value={String(claims.filter((c) => c.status === "Manual review" || c.status === "Oracle check" || c.status === "Submitted").length)} />
+        <KPI icon={FileWarning} label="Open claims" value={String(openClaims)} />
         <KPI icon={Coins} label="LP value" value={fmtUsd(lpValue)} />
-        <KPI icon={Wallet} label="Avg APY" value="8.6%" />
+        <KPI icon={Wallet} label="Avg APY" value={positions.length ? `${(positions.reduce((s, p) => s + ((p.pool as any)?.apy ?? 0), 0) / positions.length).toFixed(1)}%` : "—"} />
       </div>
 
-      {lines.map((line) => {
-        const linePolicies = myPolicies.filter((p) => p.coverageType === line);
-        return (
-          <section key={line}>
-            <div className="flex items-center gap-3 mb-4">
-              <h2 className="font-display text-3xl">{lineMeta[line].label}</h2>
-              <span className="px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase border-[1.5px] border-foreground" style={{ background: `hsl(${lineMeta[line].color} / 0.4)` }}>
-                {linePolicies.length} polic{linePolicies.length === 1 ? "y" : "ies"}
-              </span>
-            </div>
-            <Window title={`policies.${line}`} tag="table" tagColor="muted">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-foreground">
-                    <TableHead>ID</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Premium</TableHead>
-                    <TableHead>Frequency</TableHead>
-                    <TableHead>Expires</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {linePolicies.map((p) => {
-                    const product = products.find((x) => x.id === p.productId)!;
-                    return (
-                      <TableRow key={p.id} className="border-foreground/20">
-                        <TableCell className="font-mono text-xs">{p.id}</TableCell>
-                        <TableCell><span className="font-medium">{product.name}</span></TableCell>
-                        <TableCell className="text-right font-mono">{fmtUsd(p.amountUsd)}</TableCell>
-                        <TableCell className="text-right font-mono text-primary">${p.premiumUsd}</TableCell>
-                        <TableCell className="font-mono text-xs uppercase">{p.paymentFrequency}</TableCell>
-                        <TableCell className="font-mono text-xs">{p.endDate}</TableCell>
-                        <TableCell><StatusBadge status={p.status} /></TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-1 justify-end">
-                            <Button size="sm" variant="ghost">Renew</Button>
-                            {line === "life" && <Button size="sm" variant="ghost">Beneficiary</Button>}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </Window>
-          </section>
-        );
-      })}
-
-      <section>
-        <h2 className="font-display text-3xl mb-4">Premium history</h2>
-        <Window title="premiums.history" tag="paid" tagColor="secondary">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-foreground">
-                <TableHead>ID</TableHead>
-                <TableHead>Policy</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead>Paid at</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {premiums.map((pr) => (
-                <TableRow key={pr.id} className="border-foreground/20">
-                  <TableCell className="font-mono text-xs">{pr.id}</TableCell>
-                  <TableCell className="font-mono text-xs">{pr.policyId}</TableCell>
-                  <TableCell className="text-right font-mono">${pr.amountUsd}</TableCell>
-                  <TableCell className="font-mono text-xs">{pr.paidAt}</TableCell>
-                  <TableCell><StatusBadge status={pr.status} /></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Window>
-      </section>
-
-      <section>
-        <h2 className="font-display text-3xl mb-4">LP positions</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {myPools.map((pool) => (
-            <Window key={pool.id} title={pool.id} tag={pool.poolType} tagColor="secondary" hover>
-              <div className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="font-display text-xl">{pool.name}</div>
-                  <span className="px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase border-[1.5px] border-foreground bg-secondary">{pool.apy}% APY</span>
-                </div>
-                <div className="font-display text-3xl">${pool.myStakeUsd?.toLocaleString()}</div>
-                <div className="text-[10px] font-mono uppercase text-muted-foreground mt-1">Your stake · {pool.acceptedTokens.join(", ")}</div>
-                <Button size="sm" variant="outline" className="mt-4 w-full">Manage</Button>
-              </div>
-            </Window>
-          ))}
+      {policiesLoading ? (
+        <div className="flex items-center gap-2 text-foreground/50 py-8">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading policies...
         </div>
-      </section>
+      ) : activePolicies.length === 0 ? (
+        <Window title="policies.empty" tag="empty" tagColor="muted">
+          <div className="p-12 text-center">
+            <ShieldCheck className="h-8 w-8 mx-auto mb-3 text-foreground/30" />
+            <p className="text-foreground/50">No active policies. Buy cover or load demo data above.</p>
+          </div>
+        </Window>
+      ) : (
+        lines.map((line) => {
+          const linePolicies = activePolicies.filter(
+            (p) => (coverageTypeToLine[p.coverageType] ?? "defi") === line
+          );
+          return (
+            <section key={line}>
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="font-display text-3xl">{lineMeta[line].label}</h2>
+                <span
+                  className="px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase border-[1.5px] border-foreground"
+                  style={{ background: `hsl(${lineMeta[line].color} / 0.4)` }}
+                >
+                  {linePolicies.length} polic{linePolicies.length === 1 ? "y" : "ies"}
+                </span>
+              </div>
+              <Window title={`policies.${line}`} tag="table" tagColor="muted">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-foreground">
+                      <TableHead>Product</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">Premium</TableHead>
+                      <TableHead>Frequency</TableHead>
+                      <TableHead>Expires</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {linePolicies.map((p) => {
+                      const productId = p.productId ?? coverageTypeToProductId[p.coverageType];
+                      const product = products.find((x) => x.id === productId) ?? products[0];
+                      return (
+                        <TableRow key={p._id} className="border-foreground/20">
+                          <TableCell><span className="font-medium">{product.name}</span></TableCell>
+                          <TableCell className="text-right font-mono">{fmtUsd(p.coverageAmountUsd)}</TableCell>
+                          <TableCell className="text-right font-mono text-primary">${p.premiumAmountUsd}</TableCell>
+                          <TableCell className="font-mono text-xs uppercase">{p.paymentFrequency}</TableCell>
+                          <TableCell className="font-mono text-xs">{p.endDate}</TableCell>
+                          <TableCell><StatusBadge status={p.status === "active" ? "Active" : p.status} /></TableCell>
+                          <TableCell className="text-right">
+                            <Button size="sm" variant="ghost" asChild>
+                              <Link to="/claims">Claim</Link>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </Window>
+            </section>
+          );
+        })
+      )}
+
+      {/* LP Positions */}
+      {positions.length > 0 && (
+        <section>
+          <h2 className="font-display text-3xl mb-4">LP positions</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {positions.map((pos) => {
+              const pool = pos.pool as any;
+              return (
+                <Window key={pos._id} title={pool?.poolId ?? "position"} tag={pool?.poolType ?? "DeFi"} tagColor="secondary" hover>
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-display text-xl">{pool?.name ?? "Pool"}</div>
+                      <span className="px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase border-[1.5px] border-foreground bg-secondary">
+                        {pool?.apy ?? 0}% APY
+                      </span>
+                    </div>
+                    <div className="font-display text-3xl">${pos.depositedAmountUsd.toLocaleString()}</div>
+                    <div className="text-[10px] font-mono uppercase text-muted-foreground mt-1">
+                      Your stake · {pos.depositedToken}
+                    </div>
+                    <Button size="sm" variant="outline" className="mt-4 w-full" asChild>
+                      <Link to="/stake">Manage</Link>
+                    </Button>
+                  </div>
+                </Window>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
@@ -173,8 +236,11 @@ function KPI({ icon: Icon, label, value, accent }: { icon: React.ComponentType<{
 export function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     Active: "bg-secondary text-foreground",
+    active: "bg-secondary text-foreground",
     Expired: "bg-muted text-foreground",
+    expired: "bg-muted text-foreground",
     Claimed: "bg-primary text-primary-foreground",
+    claimed: "bg-primary text-primary-foreground",
     Submitted: "bg-[hsl(var(--warning))] text-foreground",
     "Oracle check": "bg-[hsl(var(--warning))] text-foreground",
     "Auto-approved": "bg-secondary text-foreground",
@@ -185,5 +251,9 @@ export function StatusBadge({ status }: { status: string }) {
     Paid: "bg-primary text-primary-foreground",
     Failed: "bg-destructive text-destructive-foreground",
   };
-  return <span className={`px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase border-[1.5px] border-foreground ${map[status] || ""}`}>{status}</span>;
+  return (
+    <span className={`px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase border-[1.5px] border-foreground ${map[status] ?? ""}`}>
+      {status}
+    </span>
+  );
 }

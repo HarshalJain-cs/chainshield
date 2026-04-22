@@ -36,6 +36,8 @@ const perils = [
   "Trip cancellation", "Lost luggage", "Wallet hack", "Exchange insolvency",
 ];
 
+import { ScrollReveal } from "@/components/ScrollReveal";
+
 export default function Index() {
   const featured = products.slice(0, 3);
   const lines = (Object.keys(lineMeta) as CoverageLine[]);
@@ -150,39 +152,35 @@ export default function Index() {
       {/* Stats */}
       <section className="container py-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stats.map((s) => (
-            <Window key={s.label} title={s.label} tag="stat" tagColor="muted">
-              <div className="p-5">
-                <div className="font-display text-3xl md:text-4xl">
-                  <AnimatedCounter value={s.value} prefix={s.prefix} suffix={s.suffix} decimals={s.decimals ?? 0} />
+          {stats.map((s, i) => (
+            <ScrollReveal key={s.label} delay={i * 0.1}>
+              <Window title={s.label} tag="stat" tagColor="muted">
+                <div className="p-5">
+                  <div className="font-display text-3xl md:text-4xl">
+                    <AnimatedCounter value={s.value} prefix={s.prefix} suffix={s.suffix} decimals={s.decimals ?? 0} />
+                  </div>
+                  <div className="text-[10px] font-mono uppercase text-muted-foreground mt-2">{s.label}</div>
                 </div>
-                <div className="text-[10px] font-mono uppercase text-muted-foreground mt-2">{s.label}</div>
-              </div>
-            </Window>
+              </Window>
+            </ScrollReveal>
           ))}
         </div>
       </section>
 
       {/* Pick your coverage line */}
       <section className="container pb-20">
-        <div className="text-center max-w-2xl mx-auto mb-12">
+        <ScrollReveal className="text-center max-w-2xl mx-auto mb-12">
           <span className="chip mb-4">Pick your coverage line</span>
           <h2 className="font-display text-4xl md:text-6xl leading-tight">Six lines. <em>One protocol.</em></h2>
           <p className="mt-4 text-foreground/70 text-lg">From hospital bills to smart-contract exploits — all underwritten transparently onchain.</p>
-        </div>
+        </ScrollReveal>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {lines.map((line, i) => {
             const meta = lineMeta[line];
             const Icon = lineIcons[line];
             return (
-              <motion.div
-                key={line}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.06 }}
-              >
-                <Link to={`/cover/line/${line}`} className="block group">
+              <ScrollReveal key={line} delay={i * 0.06}>
+                <Link to={`/cover/line/${line}`} className="block group h-full">
                   <Window title={`line_${line}`} tag={meta.label} tagColor={i % 2 === 0 ? "primary" : "secondary"} hover className="h-full">
                     <div className="p-6">
                       <div className="w-12 h-12 border-[1.5px] border-foreground flex items-center justify-center mb-5" style={{ background: `hsl(${meta.color} / 0.4)` }}>
@@ -201,7 +199,7 @@ export default function Index() {
                     </div>
                   </Window>
                 </Link>
-              </motion.div>
+              </ScrollReveal>
             );
           })}
         </div>
@@ -209,20 +207,14 @@ export default function Index() {
 
       {/* Roles */}
       <section className="container pb-20">
-        <div className="text-center max-w-2xl mx-auto mb-12">
+        <ScrollReveal className="text-center max-w-2xl mx-auto mb-12">
           <span className="chip mb-4">Pick your role</span>
           <h2 className="font-display text-4xl md:text-6xl leading-tight">Four ways in.</h2>
-        </div>
+        </ScrollReveal>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {roles.map((p, i) => (
-            <motion.div
-              key={p.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-            >
-              <Link to={p.to} className="block group">
+            <ScrollReveal key={p.title} delay={i * 0.08}>
+              <Link to={p.to} className="block group h-full">
                 <Window title={`role_${p.tag}`} tag={p.tag} tagColor={p.color} hover className="h-full">
                   <div className="p-6">
                     <div className="w-12 h-12 border-[1.5px] border-foreground flex items-center justify-center mb-5 bg-card">
@@ -236,82 +228,88 @@ export default function Index() {
                   </div>
                 </Window>
               </Link>
-            </motion.div>
+            </ScrollReveal>
           ))}
         </div>
       </section>
 
       {/* Featured cover */}
       <section className="container pb-20">
-        <div className="flex items-end justify-between mb-8">
+        <ScrollReveal className="flex items-end justify-between mb-8">
           <div>
             <span className="chip mb-3">Marketplace</span>
             <h2 className="font-display text-4xl md:text-5xl">Featured cover.</h2>
           </div>
           <Button asChild variant="outline"><Link to="/cover">View all →</Link></Button>
-        </div>
+        </ScrollReveal>
         <div className="grid md:grid-cols-3 gap-4">
-          {featured.map((p) => (
-            <Link key={p.id} to={`/cover/${p.id}`} className="block">
-              <Window title={p.id} tag={lineMeta[p.line].label} tagColor="secondary" hover>
-                <div className="p-5">
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="w-11 h-11 border-[1.5px] border-foreground flex items-center justify-center font-mono font-bold text-sm bg-card" style={{ background: `hsl(${p.color} / 0.4)` }}>
-                      {p.symbol.slice(0, 3)}
-                    </span>
-                    <div>
-                      <div className="font-display text-xl">{p.name}</div>
-                      <div className="text-[10px] font-mono uppercase text-muted-foreground">{p.category}</div>
+          {featured.map((p, i) => (
+            <ScrollReveal key={p.id} delay={i * 0.1}>
+              <Link to={`/cover/${p.id}`} className="block h-full">
+                <Window title={p.id} tag={lineMeta[p.line].label} tagColor="secondary" hover className="h-full">
+                  <div className="p-5">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="w-11 h-11 border-[1.5px] border-foreground flex items-center justify-center font-mono font-bold text-sm bg-card" style={{ background: `hsl(${p.color} / 0.4)` }}>
+                        {p.symbol.slice(0, 3)}
+                      </span>
+                      <div>
+                        <div className="font-display text-xl">{p.name}</div>
+                        <div className="text-[10px] font-mono uppercase text-muted-foreground">{p.category}</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 pt-3 border-t-[1.5px] border-foreground">
+                      <div>
+                        <div className="text-[10px] font-mono uppercase text-muted-foreground">Premium</div>
+                        <div className="font-display text-2xl text-primary">{formatPremium(p)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-mono uppercase text-muted-foreground">Tier</div>
+                        <div className="font-display text-2xl">{p.tier}</div>
+                      </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t-[1.5px] border-foreground">
-                    <div>
-                      <div className="text-[10px] font-mono uppercase text-muted-foreground">Premium</div>
-                      <div className="font-display text-2xl text-primary">{formatPremium(p)}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-mono uppercase text-muted-foreground">Tier</div>
-                      <div className="font-display text-2xl">{p.tier}</div>
-                    </div>
-                  </div>
-                </div>
-              </Window>
-            </Link>
+                </Window>
+              </Link>
+            </ScrollReveal>
           ))}
         </div>
       </section>
 
       {/* How it works */}
       <section className="container pb-20">
-        <div className="max-w-2xl mb-12">
+        <ScrollReveal className="max-w-2xl mb-12">
           <span className="chip mb-3">How it works</span>
           <h2 className="font-display text-4xl md:text-6xl leading-tight">Three steps. <em>No paperwork.</em></h2>
-        </div>
+        </ScrollReveal>
         <div className="grid md:grid-cols-3 gap-4">
           {steps.map((s, i) => (
-            <Window key={s.title} title={`step_0${i + 1}`} tag={`0${i + 1}`} tagColor={i === 1 ? "secondary" : "primary"}>
-              <div className="p-6">
-                <s.icon className="h-8 w-8 mb-4" />
-                <h3 className="font-display text-3xl mb-2">{s.title}</h3>
-                <p className="text-foreground/70">{s.desc}</p>
-              </div>
-            </Window>
+            <ScrollReveal key={s.title} delay={i * 0.1}>
+              <Window title={`step_0${i + 1}`} tag={`0${i + 1}`} tagColor={i === 1 ? "secondary" : "primary"} className="h-full">
+                <div className="p-6">
+                  <s.icon className="h-8 w-8 mb-4" />
+                  <h3 className="font-display text-3xl mb-2">{s.title}</h3>
+                  <p className="text-foreground/70">{s.desc}</p>
+                </div>
+              </Window>
+            </ScrollReveal>
           ))}
         </div>
       </section>
 
       {/* CTA */}
       <section className="container pb-20">
-        <Window title="get_started.cta" tag="ready?" tagColor="primary" large>
-          <div className="p-10 md:p-16 text-center">
-            <h2 className="font-display text-4xl md:text-6xl leading-tight max-w-2xl mx-auto">Cover everything. <em>In one wallet.</em></h2>
-            <p className="mt-4 text-foreground/70 max-w-xl mx-auto">From hospital bills to wallet hacks — get covered in under 60 seconds.</p>
-            <div className="mt-8 flex justify-center gap-3">
-              <Button asChild size="lg"><Link to="/cover">Browse cover</Link></Button>
-              <Button asChild size="lg" variant="outline"><Link to="/governance">View governance</Link></Button>
+        <ScrollReveal delay={0.2}>
+          <Window title="get_started.cta" tag="ready?" tagColor="primary" large>
+            <div className="p-10 md:p-16 text-center">
+              <h2 className="font-display text-4xl md:text-6xl leading-tight max-w-2xl mx-auto">Cover everything. <em>In one wallet.</em></h2>
+              <p className="mt-4 text-foreground/70 max-w-xl mx-auto">From hospital bills to wallet hacks — get covered in under 60 seconds.</p>
+              <div className="mt-8 flex justify-center gap-3">
+                <Button asChild size="lg"><Link to="/cover">Browse cover</Link></Button>
+                <Button asChild size="lg" variant="outline"><Link to="/governance">View governance</Link></Button>
+              </div>
             </div>
-          </div>
-        </Window>
+          </Window>
+        </ScrollReveal>
       </section>
     </div>
   );
