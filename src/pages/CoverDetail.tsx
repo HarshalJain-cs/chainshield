@@ -72,16 +72,16 @@ export default function CoverDetail() {
     setShowTx(true);
 
     try {
-      let coverageType = product.line === "defi" ? "defi_smart_contract" :
+      const coverageType = product.line === "defi" ? "defi_smart_contract" :
                          product.line === "health" ? "health_standard" :
                          product.line === "life" ? "life_term" :
                          product.line === "auto" ? "auto_full" :
                          product.line === "travel" ? "travel_basic" : "finance_wallet";
 
-      let durationMonths = product.line === "defi" ? Math.ceil(days / 30) :
+      const durationMonths = product.line === "defi" ? Math.ceil(days / 30) :
                            product.line === "travel" ? 1 : 12;
 
-      let coverageAmountUsd = product.line === "defi" || product.line === "finance" ? parseFloat(amount) :
+      const coverageAmountUsd = product.line === "defi" || product.line === "finance" ? parseFloat(amount) :
                               product.line === "auto" ? vehicleValue : 
                               product.line === "health" ? 250_000 : 500_000;
 
