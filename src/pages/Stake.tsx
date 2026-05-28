@@ -9,7 +9,7 @@ import { useUserPositions } from "@/hooks/useUserPositions";
 import { useStake, useUnstake } from "@/hooks/useStake";
 import { TxStatusModal } from "@/components/web3/TxStatusModal";
 import type { Id } from "../../convex/_generated/dataModel";
-import { useAccount } from "wagmi";
+import { useActiveAccount } from "thirdweb/react";
 
 const poolTypes = ["All", "DeFi", "Health", "Auto", "Life", "Mixed"] as const;
 
@@ -59,7 +59,8 @@ export default function Stake() {
 }
 
 function PoolCard({ pool, userPosition }: { pool: any; userPosition?: any }) {
-  const { isConnected } = useAccount();
+  const account = useActiveAccount();
+  const isConnected = !!account;
   const [amount, setAmount] = useState(1000);
   const [tab, setTab] = useState<"stake" | "unstake">("stake");
   

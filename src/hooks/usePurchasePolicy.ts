@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { useAccount } from "wagmi";
+import { useActiveAccount } from "thirdweb/react";
 import { api } from "../../convex/_generated/api";
 import { simulateTx, type TxStatus } from "@/lib/contracts/mockTx";
 import type { Id } from "../../convex/_generated/dataModel";
+import { purchasePolicySchema } from "@/lib/validation";
 
 export interface PurchasePolicyParams {
   coverageType: string;
@@ -25,7 +26,8 @@ export interface PurchasePolicyParams {
  * 3. Record first premium payment
  */
 export function usePurchasePolicy() {
-  const { address } = useAccount();
+  const account = useActiveAccount();
+  const address = account?.address;
   const createPolicy = useMutation(api.policies.createPolicy);
   const recordPremium = useMutation(api.premiums.recordPremium);
 
@@ -40,6 +42,9 @@ export function usePurchasePolicy() {
     setTxStatus("pending");
 
     try {
+      // Validate input
+      const validated = purchasePolicySchema.parse(params);
+
       // 1. Simulate onchain tx
       const result = await simulateTx("purchasePolicy", (status, hash) => {
         setTxStatus(status);

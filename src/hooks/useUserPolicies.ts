@@ -1,5 +1,5 @@
 import { useQuery } from "convex/react";
-import { useAccount } from "wagmi";
+import { useActiveAccount } from "thirdweb/react";
 import { api } from "../../convex/_generated/api";
 
 /**
@@ -7,7 +7,8 @@ import { api } from "../../convex/_generated/api";
  * Falls back to empty array when wallet not connected.
  */
 export function useUserPolicies() {
-  const { address } = useAccount();
+  const account = useActiveAccount();
+  const address = account?.address;
   const policies = useQuery(
     api.policies.getUserPolicies,
     address ? { walletAddress: address } : "skip"

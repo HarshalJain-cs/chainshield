@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "@/components/Logo";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ThirdwebConnectButton } from "@/components/web3/ThirdwebConnectButton";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -38,7 +38,7 @@ export const TopNav = () => {
 
         <div className="flex items-center h-full">
           <div className="hidden sm:flex items-center px-3 h-full border-l-[1.5px] border-foreground">
-            <ConnectButton showBalance={false} chainStatus="icon" accountStatus={{ smallScreen: "avatar", largeScreen: "full" }} />
+            <ThirdwebConnectButton />
           </div>
           <button className="md:hidden h-full px-4 border-l-[1.5px] border-foreground" onClick={() => setOpen((v) => !v)} aria-label="Toggle menu">
             {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -60,7 +60,7 @@ export const TopNav = () => {
             </NavLink>
           ))}
           <div className="p-3 sm:hidden border-t-[1.5px] border-foreground">
-            <ConnectButton showBalance={false} />
+            <ThirdwebConnectButton />
           </div>
         </div>
       )}

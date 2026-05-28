@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { useAccount } from "wagmi";
+import { useActiveAccount } from "thirdweb/react";
 import { api } from "../../convex/_generated/api";
 import { simulateTx, type TxStatus } from "@/lib/contracts/mockTx";
 import type { Id } from "../../convex/_generated/dataModel";
+import { stakeSchema } from "@/lib/validation";
 
 /**
  * Hook for staking (depositing) into a liquidity pool.
  */
 export function useStake() {
-  const { address } = useAccount();
+  const account = useActiveAccount();
+  const address = account?.address;
   const deposit = useMutation(api.lp.deposit);
 
   const [txStatus, setTxStatus] = useState<TxStatus>("idle");
@@ -26,6 +28,9 @@ export function useStake() {
     setTxStatus("pending");
 
     try {
+      // Validate input
+      stakeSchema.parse({ poolId: poolDocId, amountUsd, token });
+
       const result = await simulateTx("deposit", (status, hash) => {
         setTxStatus(status);
         if (hash) setTxHash(hash);
@@ -60,7 +65,8 @@ export function useStake() {
  * Hook for unstaking (withdrawing) from a liquidity pool.
  */
 export function useUnstake() {
-  const { address } = useAccount();
+  const account = useActiveAccount();
+  const address = account?.address;
   const withdraw = useMutation(api.lp.withdraw);
 
   const [txStatus, setTxStatus] = useState<TxStatus>("idle");

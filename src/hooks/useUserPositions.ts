@@ -1,12 +1,13 @@
 import { useQuery } from "convex/react";
-import { useAccount } from "wagmi";
+import { useActiveAccount } from "thirdweb/react";
 import { api } from "../../convex/_generated/api";
 
 /**
  * Returns the connected wallet's LP positions with pool metadata.
  */
 export function useUserPositions() {
-  const { address } = useAccount();
+  const account = useActiveAccount();
+  const address = account?.address;
   const positions = useQuery(
     api.lp.getUserPositions,
     address ? { walletAddress: address } : "skip"

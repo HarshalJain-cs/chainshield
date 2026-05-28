@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useActiveAccount } from "thirdweb/react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
@@ -8,8 +8,11 @@ import { api } from "../../convex/_generated/api";
  * When a wallet connects, creates/upserts the user record in Convex.
  */
 export function useConvexAuth() {
-  const { address, isConnected } = useAccount();
+  const account = useActiveAccount();
   const upsertUser = useMutation(api.users.upsertUser);
+
+  const address = account?.address;
+  const isConnected = !!account;
 
   useEffect(() => {
     if (isConnected && address) {

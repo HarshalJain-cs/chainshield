@@ -1,5 +1,5 @@
-import { useAccount } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useActiveAccount } from "thirdweb/react";
+import { ThirdwebConnectButton } from "@/components/web3/ThirdwebConnectButton";
 import { Wallet, ShieldCheck, Coins, FileWarning, Loader2, Plus } from "lucide-react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -49,7 +49,9 @@ const coverageTypeToLine: Record<string, CoverageLine> = {
 };
 
 export default function Dashboard() {
-  const { isConnected, address } = useAccount();
+  const account = useActiveAccount();
+  const address = account?.address;
+  const isConnected = !!account;
   const { policies, isLoading: policiesLoading } = useUserPolicies();
   const { claims } = useUserClaims();
   const { positions } = useUserPositions();
@@ -64,7 +66,7 @@ export default function Dashboard() {
               <Wallet className="h-10 w-10 mx-auto mb-4" />
               <h1 className="font-display text-4xl mb-2">Connect your wallet</h1>
               <p className="text-foreground/70 mb-6">Sign in to view your active cover, claims and LP positions.</p>
-              <div className="flex justify-center"><ConnectButton /></div>
+              <div className="flex justify-center"><ThirdwebConnectButton /></div>
             </div>
           </Window>
         </div>

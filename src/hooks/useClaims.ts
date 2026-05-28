@@ -1,5 +1,5 @@
 import { useQuery } from "convex/react";
-import { useAccount } from "wagmi";
+import { useActiveAccount } from "thirdweb/react";
 import { api } from "../../convex/_generated/api";
 
 /**
@@ -7,7 +7,8 @@ import { api } from "../../convex/_generated/api";
  * Convex automatically re-renders when claim status changes (realtime).
  */
 export function useUserClaims() {
-  const { address } = useAccount();
+  const account = useActiveAccount();
+  const address = account?.address;
   const claims = useQuery(
     api.claims.getUserClaims,
     address ? { walletAddress: address } : "skip"

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { useAccount } from "wagmi";
+import { useActiveAccount } from "thirdweb/react";
 import { api } from "../../convex/_generated/api";
 import { simulateTx, type TxStatus } from "@/lib/contracts/mockTx";
 import type { Id } from "../../convex/_generated/dataModel";
+import { submitClaimSchemaBase } from "@/lib/validation";
 
 export interface SubmitClaimParams {
   policyId: Id<"policies">;
@@ -32,7 +33,8 @@ export interface SubmitClaimParams {
  * 3. Convex realtime will reflect status changes live
  */
 export function useSubmitClaim() {
-  const { address } = useAccount();
+  const account = useActiveAccount();
+  const address = account?.address;
   const createClaim = useMutation(api.claims.createClaim);
 
   const [txStatus, setTxStatus] = useState<TxStatus>("idle");
@@ -46,6 +48,24 @@ export function useSubmitClaim() {
     setTxStatus("pending");
 
     try {
+      // Validate input
+      submitClaimSchemaBase.parse({
+        policyId: params.policyId,
+        claimType: params.claimType,
+        incidentType: params.incidentType,
+        description: params.description,
+        requestedAmountUsd: params.requestedAmountUsd,
+        incidentDate: params.incidentDate,
+        incidentTxHash: params.incidentTxHash,
+        affectedContract: params.affectedContract,
+        protocolName: params.protocolName,
+        providerName: params.providerName,
+        treatmentFrom: params.treatmentFrom,
+        treatmentTo: params.treatmentTo,
+        policeReport: params.policeReport,
+        repairEstimate: params.repairEstimate,
+      });
+
       // 1. Simulate tx
       const result = await simulateTx("submitClaim", (status, hash) => {
         setTxStatus(status);

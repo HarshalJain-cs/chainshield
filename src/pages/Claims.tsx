@@ -14,7 +14,7 @@ import { useSubmitClaim } from "@/hooks/useSubmitClaim";
 import { TxStatusModal } from "@/components/web3/TxStatusModal";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { useAccount } from "wagmi";
+import { useActiveAccount } from "thirdweb/react";
 import type { Id } from "../../convex/_generated/dataModel";
 
 const openStatuses = new Set(["Submitted", "Oracle check", "Manual review"]);
@@ -177,7 +177,8 @@ function ClaimList({
 }
 
 function FileClaimDialog() {
-  const { address } = useAccount();
+  const account = useActiveAccount();
+  const address = account?.address;
   const [step, setStep] = useState(1);
   const [open, setOpen] = useState(false);
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);

@@ -7,8 +7,8 @@ import { Window } from "@/components/Window";
 import { ArrowLeft, ShieldCheck, Clock, TrendingUp } from "lucide-react";
 import { RiskBadge } from "./Cover";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { useAccount } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useActiveAccount } from "thirdweb/react";
+import { ThirdwebConnectButton } from "@/components/web3/ThirdwebConnectButton";
 
 import { usePurchasePolicy } from "@/hooks/usePurchasePolicy";
 import { TxStatusModal } from "@/components/web3/TxStatusModal";
@@ -30,7 +30,8 @@ export default function CoverDetail() {
   const [beneficiary, setBeneficiary] = useState("");
   const [beneficiaryShare, setBeneficiaryShare] = useState(100);
   const [open, setOpen] = useState(false);
-  const { isConnected } = useAccount();
+  const account = useActiveAccount();
+  const isConnected = !!account;
 
   const { purchase, txStatus, txHash, reset } = usePurchasePolicy();
   const [showTx, setShowTx] = useState(false);
@@ -276,7 +277,7 @@ export default function CoverDetail() {
                 Sign transaction onchain
               </Button>
             ) : (
-              <div className="w-full flex justify-center"><ConnectButton /></div>
+              <div className="w-full flex justify-center"><ThirdwebConnectButton /></div>
             )}
           </DialogFooter>
         </DialogContent>
