@@ -3,6 +3,7 @@ import { useMutation } from "convex/react";
 import { useActiveAccount } from "thirdweb/react";
 import { api } from "../../convex/_generated/api";
 import { simulateTx, type TxStatus } from "@/lib/contracts/mockTx";
+import { useAppMode } from "@/hooks/useAppMode";
 import type { Id } from "../../convex/_generated/dataModel";
 import { purchasePolicySchema } from "@/lib/validation";
 
@@ -30,6 +31,7 @@ export function usePurchasePolicy() {
   const address = account?.address;
   const createPolicy = useMutation(api.policies.createPolicy);
   const recordPremium = useMutation(api.premiums.recordPremium);
+  const { isDemo } = useAppMode();
 
   const [txStatus, setTxStatus] = useState<TxStatus>("idle");
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -45,11 +47,21 @@ export function usePurchasePolicy() {
       // Validate input
       const validated = purchasePolicySchema.parse(params);
 
-      // 1. Simulate onchain tx
-      const result = await simulateTx("purchasePolicy", (status, hash) => {
-        setTxStatus(status);
-        if (hash) setTxHash(hash);
-      });
+      let txHash: string;
+      if (isDemo) {
+        // Demo mode: simulate transaction
+        const result = await simulateTx("purchasePolicy", (status, hash) => {
+          setTxStatus(status);
+          if (hash) setTxHash(hash);
+        });
+        txHash = result.txHash;
+      } else {
+        // Live mode: TODO Phase 3 — call PolicyManager.purchasePolicy() via Thirdweb
+        throw new Error(
+          "Live mode not yet configured. Smart contracts have not been deployed yet. " +
+          "Set VITE_MODE=demo to use the simulation mode."
+        );
+      }
 
       // 2. Calculate dates
       const startDate = new Date().toISOString().split("T")[0];
@@ -71,7 +83,7 @@ export function usePurchasePolicy() {
         startDate,
         endDate,
         beneficiaries: params.beneficiaries,
-        txHash: result.txHash,
+        txHash,
       });
       setPolicyId(id);
 
@@ -85,10 +97,10 @@ export function usePurchasePolicy() {
         periodEnd: new Date(new Date(startDate).getTime() + 30 * 24 * 60 * 60 * 1000)
           .toISOString()
           .split("T")[0],
-        txHash: result.txHash,
+        txHash,
       });
 
-      return { txHash: result.txHash, policyId: id };
+      return { txHash, policyId: id };
     } catch (err: any) {
       setError(err.message ?? "Transaction failed");
       setTxStatus("error");

@@ -3,6 +3,7 @@ import { useMutation } from "convex/react";
 import { useActiveAccount } from "thirdweb/react";
 import { api } from "../../convex/_generated/api";
 import { simulateTx, type TxStatus } from "@/lib/contracts/mockTx";
+import { useAppMode } from "@/hooks/useAppMode";
 import type { Id } from "../../convex/_generated/dataModel";
 import { submitClaimSchemaBase } from "@/lib/validation";
 
@@ -36,6 +37,7 @@ export function useSubmitClaim() {
   const account = useActiveAccount();
   const address = account?.address;
   const createClaim = useMutation(api.claims.createClaim);
+  const { isDemo } = useAppMode();
 
   const [txStatus, setTxStatus] = useState<TxStatus>("idle");
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -66,11 +68,19 @@ export function useSubmitClaim() {
         repairEstimate: params.repairEstimate,
       });
 
-      // 1. Simulate tx
-      const result = await simulateTx("submitClaim", (status, hash) => {
-        setTxStatus(status);
-        if (hash) setTxHash(hash);
-      });
+      // 1. Get tx hash (demo: simulate; live: real contract call Phase 3)
+      let resolvedTxHash: string;
+      if (isDemo) {
+        const result = await simulateTx("submitClaim", (status, hash) => {
+          setTxStatus(status);
+          if (hash) setTxHash(hash);
+        });
+        resolvedTxHash = result.txHash;
+      } else {
+        throw new Error(
+          "Live mode not yet configured. Set VITE_MODE=demo to use the simulation mode."
+        );
+      }
 
       // 2. Store in Convex
       const id = await createClaim({
@@ -90,11 +100,11 @@ export function useSubmitClaim() {
         policeReport: params.policeReport,
         repairEstimate: params.repairEstimate,
         evidenceCids: [],
-        txHashSubmitted: result.txHash,
+        txHashSubmitted: resolvedTxHash,
       });
 
       setClaimId(id);
-      return { txHash: result.txHash, claimId: id };
+      return { txHash: resolvedTxHash, claimId: id };
     } catch (err: any) {
       setError(err.message ?? "Submission failed");
       setTxStatus("error");

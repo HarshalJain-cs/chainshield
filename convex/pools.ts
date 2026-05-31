@@ -66,3 +66,39 @@ export const updatePoolStats = mutation({
     await ctx.db.patch(id, updates);
   },
 });
+
+export const getPoolHistory = query({
+  args: { poolId: v.id("pools"), days: v.optional(v.number()) },
+  handler: async (ctx, { poolId, days = 30 }) => {
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    const snapshots = await ctx.db
+      .query("yieldSnapshots")
+      .withIndex("by_pool", (q) => q.eq("poolId", poolId))
+      .collect();
+    return snapshots
+      .filter((s) => s.date >= cutoff)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  },
+});
+
+export const calculateProjectedYield = query({
+  args: {
+    poolId: v.id("pools"),
+    depositAmountUsd: v.number(),
+    durationDays: v.optional(v.number()),
+  },
+  handler: async (ctx, { poolId, depositAmountUsd, durationDays = 365 }) => {
+    const pool = await ctx.db.get(poolId);
+    if (!pool) return null;
+    const dailyRate = pool.apy / 100 / 365;
+    const projectedEarnings = depositAmountUsd * dailyRate * durationDays;
+    return {
+      depositAmountUsd,
+      durationDays,
+      projectedEarningsUsd: projectedEarnings,
+      effectiveApy: pool.apy,
+    };
+  },
+});

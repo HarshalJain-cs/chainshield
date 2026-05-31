@@ -3,6 +3,7 @@ import { useMutation } from "convex/react";
 import { useActiveAccount } from "thirdweb/react";
 import { api } from "../../convex/_generated/api";
 import { simulateTx, type TxStatus } from "@/lib/contracts/mockTx";
+import { useAppMode } from "@/hooks/useAppMode";
 import type { Id } from "../../convex/_generated/dataModel";
 import { stakeSchema } from "@/lib/validation";
 
@@ -13,6 +14,7 @@ export function useStake() {
   const account = useActiveAccount();
   const address = account?.address;
   const deposit = useMutation(api.lp.deposit);
+  const { isDemo } = useAppMode();
 
   const [txStatus, setTxStatus] = useState<TxStatus>("idle");
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -30,6 +32,10 @@ export function useStake() {
     try {
       // Validate input
       stakeSchema.parse({ poolId: poolDocId, amountUsd, token });
+
+      if (!isDemo) {
+        throw new Error("Live mode not yet configured. Set VITE_MODE=demo.");
+      }
 
       const result = await simulateTx("deposit", (status, hash) => {
         setTxStatus(status);

@@ -11,6 +11,8 @@ const claimStatus = v.union(
   v.literal("Paid")
 );
 
+// ─── Queries ─────────────────────────────────────────────────────────────────
+
 export const getUserClaims = query({
   args: { walletAddress: v.string() },
   handler: async (ctx, { walletAddress }) => {
@@ -50,6 +52,62 @@ export const getClaimById = query({
   },
 });
 
+export const getClaimMessages = query({
+  args: { claimId: v.id("claims") },
+  handler: async (ctx, { claimId }) => {
+    return await ctx.db
+      .query("claimMessages")
+      .withIndex("by_claim", (q) => q.eq("claimId", claimId))
+      .order("asc")
+      .collect();
+  },
+});
+
+/** Returns the timeline of status changes from admin audit log */
+export const getClaimTimeline = query({
+  args: { claimId: v.id("claims") },
+  handler: async (ctx, { claimId }) => {
+    const claim = await ctx.db.get(claimId);
+    if (!claim) return [];
+
+    // Get admin actions for this claim
+    const actions = await ctx.db
+      .query("adminActions")
+      .withIndex("by_action", (q) => q.eq("action", "approve_claim"))
+      .filter((q) => q.eq(q.field("targetId"), claimId as string))
+      .collect();
+
+    const rejectActions = await ctx.db
+      .query("adminActions")
+      .withIndex("by_action", (q) => q.eq("action", "reject_claim"))
+      .filter((q) => q.eq(q.field("targetId"), claimId as string))
+      .collect();
+
+    const allActions = [...actions, ...rejectActions].sort((a, b) => a.createdAt - b.createdAt);
+
+    // Build timeline from claim data + actions
+    const timeline = [
+      { status: "Submitted", timestamp: claim.createdAt, label: "Claim submitted" },
+    ];
+
+    if (claim.reviewStartedAt) {
+      timeline.push({ status: "Manual review", timestamp: claim.reviewStartedAt, label: "Assigned to reviewer" });
+    }
+
+    if (claim.reviewCompletedAt) {
+      timeline.push({
+        status: claim.status,
+        timestamp: claim.reviewCompletedAt,
+        label: claim.status === "Approved" ? "Claim approved" : "Claim rejected",
+      });
+    }
+
+    return timeline;
+  },
+});
+
+// ─── Mutations ───────────────────────────────────────────────────────────────
+
 export const createClaim = mutation({
   args: {
     policyId: v.id("policies"),
@@ -87,9 +145,6 @@ export const createClaim = mutation({
       createdAt: now,
       updatedAt: now,
     });
-
-    // Simulate oracle check transition after "submission"
-    // (In real app, this would be triggered by Chainlink oracle)
     return id;
   },
 });
@@ -122,6 +177,59 @@ export const voteOnClaim = mutation({
       votesFor: vote === "for" ? claim.votesFor + 1 : claim.votesFor,
       votesAgainst: vote === "against" ? claim.votesAgainst + 1 : claim.votesAgainst,
       updatedAt: Date.now(),
+    });
+  },
+});
+
+export const appealClaim = mutation({
+  args: {
+    claimId: v.id("claims"),
+    claimantWallet: v.string(),
+    appealReason: v.string(),
+    newEvidenceCids: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, { claimId, claimantWallet, appealReason, newEvidenceCids }) => {
+    const claim = await ctx.db.get(claimId);
+    if (!claim) throw new Error("Claim not found");
+    if (claim.status !== "Rejected") throw new Error("Only rejected claims can be appealed");
+    if (claim.appealDeadline && claim.appealDeadline < Date.now()) {
+      throw new Error("Appeal deadline has passed");
+    }
+
+    const now = Date.now();
+    await ctx.db.patch(claimId, {
+      status: "Manual review",
+      decisionReason: undefined,
+      reviewCompletedAt: undefined,
+      updatedAt: now,
+      ...(newEvidenceCids ? { evidenceCids: [...claim.evidenceCids, ...newEvidenceCids] } : {}),
+    });
+
+    // Add appeal message to thread
+    await ctx.db.insert("claimMessages", {
+      claimId,
+      senderWallet: claimantWallet.toLowerCase(),
+      senderRole: "claimant",
+      message: `Appeal submitted: ${appealReason}`,
+      createdAt: now,
+    });
+  },
+});
+
+export const addClaimMessage = mutation({
+  args: {
+    claimId: v.id("claims"),
+    senderWallet: v.string(),
+    senderRole: v.union(v.literal("claimant"), v.literal("reviewer"), v.literal("system")),
+    message: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("claimMessages", {
+      claimId: args.claimId,
+      senderWallet: args.senderWallet.toLowerCase(),
+      senderRole: args.senderRole,
+      message: args.message,
+      createdAt: Date.now(),
     });
   },
 });

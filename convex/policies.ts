@@ -118,3 +118,75 @@ export const updatePolicyStatus = mutation({
     await ctx.db.patch(id, { status });
   },
 });
+
+export const getExpiringPolicies = query({
+  args: { walletAddress: v.optional(v.string()), daysAhead: v.optional(v.number()) },
+  handler: async (ctx, { walletAddress, daysAhead = 7 }) => {
+    const futureMs = Date.now() + daysAhead * 24 * 60 * 60 * 1000;
+    const futureDate = new Date(futureMs).toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
+
+    let policies = await ctx.db
+      .query("policies")
+      .withIndex("by_status", (q) => q.eq("status", "active"))
+      .collect();
+
+    if (walletAddress) {
+      policies = policies.filter((p) => p.policyholder === walletAddress.toLowerCase());
+    }
+
+    return policies.filter((p) => p.endDate >= today && p.endDate <= futureDate);
+  },
+});
+
+export const renewPolicy = mutation({
+  args: {
+    policyId: v.id("policies"),
+    durationMonths: v.optional(v.number()),
+    txHash: v.optional(v.string()),
+  },
+  handler: async (ctx, { policyId, durationMonths = 12, txHash }) => {
+    const policy = await ctx.db.get(policyId);
+    if (!policy) throw new Error("Policy not found");
+
+    const currentEnd = new Date(policy.endDate);
+    const newEnd = new Date(currentEnd.getTime() + durationMonths * 30 * 24 * 60 * 60 * 1000);
+    const newEndDate = newEnd.toISOString().split("T")[0];
+
+    await ctx.db.patch(policyId, {
+      endDate: newEndDate,
+      status: "active",
+      txHash: txHash ?? policy.txHash,
+    });
+
+    return newEndDate;
+  },
+});
+
+export const cancelPolicy = mutation({
+  args: {
+    policyId: v.id("policies"),
+    walletAddress: v.string(),
+  },
+  handler: async (ctx, { policyId, walletAddress }) => {
+    const policy = await ctx.db.get(policyId);
+    if (!policy) throw new Error("Policy not found");
+    if (policy.policyholder !== walletAddress.toLowerCase()) {
+      throw new Error("Not authorized to cancel this policy");
+    }
+    if (policy.status !== "active") throw new Error("Only active policies can be cancelled");
+
+    await ctx.db.patch(policyId, { status: "cancelled" });
+
+    // Reduce user totalCoverageUsd
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_wallet", (q) => q.eq("walletAddress", walletAddress.toLowerCase()))
+      .first();
+    if (user) {
+      await ctx.db.patch(user._id, {
+        totalCoverageUsd: Math.max(0, user.totalCoverageUsd - policy.coverageAmountUsd),
+      });
+    }
+  },
+});
