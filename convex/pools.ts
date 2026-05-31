@@ -18,6 +18,13 @@ export const getPoolByPoolId = query({
   },
 });
 
+export const getPoolById = query({
+  args: { id: v.id("pools") },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id);
+  },
+});
+
 export const createPool = mutation({
   args: {
     poolId: v.string(),

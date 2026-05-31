@@ -3,6 +3,39 @@ import { httpAction, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
+// Helper to convert hex string to Uint8Array
+function hexToBytes(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+  }
+  return bytes;
+}
+
+// Verifies Web2 signature for Alchemy webhooks
+async function verifyAlchemySignature(
+  body: string,
+  signature: string,
+  secret: string
+): Promise<boolean> {
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+    const bodyBuffer = encoder.encode(body);
+    const sigBuffer = hexToBytes(signature);
+    return await crypto.subtle.verify("HMAC", key, sigBuffer, bodyBuffer);
+  } catch (err) {
+    console.error("[Webhook Verification Error]", err);
+    return false;
+  }
+}
+
 // ─── Internal Mutations ───────────────────────────────────────────────────────
 
 /** Store a raw blockchain event — called by the Alchemy webhook handler */
@@ -65,6 +98,7 @@ http.route({
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     const webhookSecret = process.env.ALCHEMY_WEBHOOK_SECRET;
+    const bodyText = await request.text();
 
     // Verify signature if secret is configured
     if (webhookSecret) {
@@ -72,15 +106,15 @@ http.route({
       if (!signature) {
         return new Response("Unauthorized", { status: 401 });
       }
-      // TODO Phase 3: verify HMAC-SHA256 signature against body
-      // const body = await request.text();
-      // const isValid = verifyAlchemySignature(body, signature, webhookSecret);
-      // if (!isValid) return new Response("Invalid signature", { status: 403 });
+      const isValid = await verifyAlchemySignature(bodyText, signature, webhookSecret);
+      if (!isValid) {
+        return new Response("Invalid signature", { status: 403 });
+      }
     }
 
     let payload: any;
     try {
-      payload = await request.json();
+      payload = JSON.parse(bodyText);
     } catch {
       return new Response("Invalid JSON", { status: 400 });
     }

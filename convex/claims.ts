@@ -131,13 +131,15 @@ export const createClaim = mutation({
     // Evidence
     evidenceCids: v.array(v.string()),
     txHashSubmitted: v.optional(v.string()),
+    onchainClaimId: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+    const { onchainClaimId, ...restArgs } = args;
     const id = await ctx.db.insert("claims", {
-      ...args,
+      ...restArgs,
       claimant: args.claimant.toLowerCase(),
-      onchainClaimId: Math.floor(Math.random() * 9000) + 100,
+      onchainClaimId: onchainClaimId ?? Math.floor(Math.random() * 9000) + 100,
       status: "Submitted",
       oracleVerdict: "n/a",
       votesFor: 0,

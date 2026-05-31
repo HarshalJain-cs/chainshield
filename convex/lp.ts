@@ -21,6 +21,13 @@ export const getUserPositions = query({
   },
 });
 
+export const getLPPositionById = query({
+  args: { id: v.id("lpPositions") },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id);
+  },
+});
+
 export const deposit = mutation({
   args: {
     poolDocId: v.id("pools"),

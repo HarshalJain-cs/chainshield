@@ -66,12 +66,14 @@ export const createPolicy = mutation({
       v.array(v.object({ name: v.string(), wallet: v.string(), share: v.number() }))
     ),
     txHash: v.optional(v.string()),
+    onchainPolicyId: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const { onchainPolicyId, ...restArgs } = args;
     const id = await ctx.db.insert("policies", {
-      ...args,
+      ...restArgs,
       policyholder: args.policyholder.toLowerCase(),
-      onchainPolicyId: Math.floor(Math.random() * 9000) + 1000, // mock ID
+      onchainPolicyId: onchainPolicyId ?? Math.floor(Math.random() * 9000) + 1000, // use onchain ID if live
       status: "active",
       createdAt: Date.now(),
     });
