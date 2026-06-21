@@ -64,7 +64,7 @@ export const products: CoverageProduct[] = [
 export const protocols = products;
 export type Protocol = CoverageProduct;
 
-export type PaymentFrequency = "monthly" | "quarterly" | "yearly" | "one-time";
+export type PaymentFrequency = "monthly" | "quarterly" | "yearly" | "one_time";
 
 export type Policy = {
   id: string;
@@ -85,7 +85,7 @@ export const policies: Policy[] = [
   { id: "P-2010", productId: "health-std",   coverageType: "health", amountUsd: 250_000, premiumUsd: 89, paymentFrequency: "monthly", startDate: "2025-08-01", endDate: "2026-08-01", status: "Active" },
   { id: "P-2034", productId: "auto-full",    coverageType: "auto",   amountUsd: 250_000, premiumUsd: 1_180, paymentFrequency: "yearly", startDate: "2025-07-15", endDate: "2026-07-15", status: "Active" },
   { id: "P-2089", productId: "life-term-20", coverageType: "life",   amountUsd: 500_000, premiumUsd: 48, paymentFrequency: "monthly", startDate: "2025-04-01", endDate: "2045-04-01", status: "Active", beneficiaries: [{ name: "A. Smith", wallet: "0x9F…3AaB", share: 100 }] },
-  { id: "P-2112", productId: "travel-medical", coverageType: "travel", amountUsd: 100_000, premiumUsd: 78, paymentFrequency: "one-time", startDate: "2025-12-01", endDate: "2025-12-31", status: "Expired" },
+  { id: "P-2112", productId: "travel-medical", coverageType: "travel", amountUsd: 100_000, premiumUsd: 78, paymentFrequency: "one_time", startDate: "2025-12-01", endDate: "2025-12-31", status: "Expired" },
   { id: "P-0987", productId: "uniswap",      coverageType: "defi",   amountUsd: 5_000,  premiumUsd: 90, paymentFrequency: "yearly",   startDate: "2025-06-04", endDate: "2025-12-04", status: "Expired" },
 ];
 

@@ -1,8 +1,19 @@
+import { Suspense } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
 import skyBg from "@/assets/sky-bg.jpg";
 import { ReactLenis } from "lenis/react";
+
+function RouteFallback() {
+  return (
+    <div className="container py-20 flex items-center justify-center">
+      <div className="font-mono text-xs uppercase tracking-widest text-foreground/50 animate-pulse">
+        Loading…
+      </div>
+    </div>
+  );
+}
 
 export const AppLayout = () => {
   const { pathname } = useLocation();
@@ -21,7 +32,9 @@ export const AppLayout = () => {
 
         <TopNav />
         <main className="flex-1 pt-6">
-          <Outlet />
+          <Suspense fallback={<RouteFallback />}>
+            <Outlet />
+          </Suspense>
         </main>
         <Footer />
       </div>

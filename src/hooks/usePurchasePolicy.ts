@@ -6,7 +6,7 @@ import { simulateTx, type TxStatus } from "@/lib/contracts/mockTx";
 import { useAppMode } from "@/hooks/useAppMode";
 import type { Id } from "../../convex/_generated/dataModel";
 import { purchasePolicySchema } from "@/lib/validation";
-import { sendTransaction, prepareContractCall, getContract, readContract, prepareEvent, parseEventLogs } from "thirdweb";
+import { sendTransaction, waitForReceipt, prepareContractCall, getContract, readContract, prepareEvent, parseEventLogs } from "thirdweb";
 import { client } from "@/lib/thirdweb";
 import { sepolia } from "thirdweb/chains";
 import { policyManagerContract, CONTRACT_ADDRESSES } from "@/lib/contracts/instances";
@@ -159,13 +159,16 @@ export function usePurchasePolicy() {
         txHash = purchaseResult.transactionHash as `0x${string}`;
         setTxHash(txHash);
 
+        // Wait for the receipt so we can read emitted logs
+        const receipt = await waitForReceipt(purchaseResult);
+
         // Parse PolicyCreated event to get the onchainPolicyId
         try {
           const policyCreatedEvent = prepareEvent({
             signature: "event PolicyCreated(uint256 indexed policyId, address indexed policyholder, string productId, uint256 coverageAmount, uint256 premiumAmount, uint256 endDate)"
           });
           const logs = parseEventLogs({
-            logs: purchaseResult.logs,
+            logs: receipt.logs,
             events: [policyCreatedEvent]
           });
           if (logs.length > 0) {

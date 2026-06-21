@@ -1,7 +1,14 @@
 import { ConnectButton } from "thirdweb/react";
-import { client, wallets, SUPPORTED_CHAINS } from "@/lib/thirdweb";
+import { client, wallets, SUPPORTED_CHAINS, hasThirdwebClientId } from "@/lib/thirdweb";
+import { DemoConnectButton } from "@/components/web3/DemoConnectButton";
 
 export function ThirdwebConnectButton() {
+  // Without a configured client ID, thirdweb's hosted social login can't work,
+  // so use the zero-setup demo wallet instead.
+  if (!hasThirdwebClientId) {
+    return <DemoConnectButton />;
+  }
+
   return (
     <ConnectButton
       client={client}

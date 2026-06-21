@@ -6,7 +6,7 @@ import { simulateTx, type TxStatus } from "@/lib/contracts/mockTx";
 import { useAppMode } from "@/hooks/useAppMode";
 import type { Id } from "../../convex/_generated/dataModel";
 import { submitClaimSchemaBase } from "@/lib/validation";
-import { sendTransaction, prepareContractCall, prepareEvent, parseEventLogs } from "thirdweb";
+import { sendTransaction, waitForReceipt, prepareContractCall, prepareEvent, parseEventLogs } from "thirdweb";
 import { claimsProcessorContract } from "@/lib/contracts/instances";
 import { toast } from "sonner";
 
@@ -118,14 +118,17 @@ export function useSubmitClaim() {
         
         resolvedTxHash = claimResult.transactionHash;
         setTxHash(resolvedTxHash);
-        
+
+        // Wait for the receipt so we can read emitted logs
+        const receipt = await waitForReceipt(claimResult);
+
         // 3. Parse ClaimSubmitted event to get onchainClaimId
         try {
           const claimSubmittedEvent = prepareEvent({
             signature: "event ClaimSubmitted(uint256 indexed claimId, uint256 indexed policyId, address indexed claimant, uint256 amount)"
           });
           const logs = parseEventLogs({
-            logs: claimResult.logs,
+            logs: receipt.logs,
             events: [claimSubmittedEvent]
           });
           if (logs.length > 0) {
@@ -160,6 +163,9 @@ export function useSubmitClaim() {
         evidenceCids: [],
         txHashSubmitted: resolvedTxHash,
         onchainClaimId: parsedOnchainClaimId,
+        // In live mode the on-chain oracle / webhook drives status changes,
+        // so skip the demo simulation pipeline.
+        simulate: isDemo,
       });
  
       setClaimId(id);

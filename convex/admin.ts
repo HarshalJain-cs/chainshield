@@ -70,8 +70,7 @@ export const getAllClaimsAdmin = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { status, limit }) => {
-    let q = ctx.db.query("claims").order("desc");
-    const results = await q.collect();
+    const results = await ctx.db.query("claims").order("desc").collect();
     const filtered = status ? results.filter((c) => c.status === status) : results;
     return limit ? filtered.slice(0, limit) : filtered;
   },

@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ThirdwebProvider } from "thirdweb/react";
 
@@ -11,22 +12,23 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AdminGuard } from "@/components/AdminGuard";
 import { UserProvider } from "@/contexts/UserContext";
 
+// Landing page is eager for fast first paint; the rest are code-split per route.
 import Index from "./pages/Index.tsx";
-import Cover from "./pages/Cover.tsx";
-import CoverDetail from "./pages/CoverDetail.tsx";
-import CoverLine from "./pages/CoverLine.tsx";
-import Dashboard from "./pages/Dashboard.tsx";
-import Claims from "./pages/Claims.tsx";
-import Stake from "./pages/Stake.tsx";
-import Governance from "./pages/Governance.tsx";
-import ProposalDetail from "./pages/ProposalDetail.tsx";
-import Profile from "./pages/Profile.tsx";
-import Admin from "./pages/Admin.tsx";
-import AdminClaims from "./pages/AdminClaims.tsx";
-import AdminClaimDetail from "./pages/AdminClaimDetail.tsx";
-import AdminUsers from "./pages/AdminUsers.tsx";
-import AdminAudit from "./pages/AdminAudit.tsx";
-import NotFound from "./pages/NotFound.tsx";
+const Cover = lazy(() => import("./pages/Cover.tsx"));
+const CoverDetail = lazy(() => import("./pages/CoverDetail.tsx"));
+const CoverLine = lazy(() => import("./pages/CoverLine.tsx"));
+const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
+const Claims = lazy(() => import("./pages/Claims.tsx"));
+const Stake = lazy(() => import("./pages/Stake.tsx"));
+const Governance = lazy(() => import("./pages/Governance.tsx"));
+const ProposalDetail = lazy(() => import("./pages/ProposalDetail.tsx"));
+const Profile = lazy(() => import("./pages/Profile.tsx"));
+const Admin = lazy(() => import("./pages/Admin.tsx"));
+const AdminClaims = lazy(() => import("./pages/AdminClaims.tsx"));
+const AdminClaimDetail = lazy(() => import("./pages/AdminClaimDetail.tsx"));
+const AdminUsers = lazy(() => import("./pages/AdminUsers.tsx"));
+const AdminAudit = lazy(() => import("./pages/AdminAudit.tsx"));
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const App = () => (
   <ErrorBoundary>

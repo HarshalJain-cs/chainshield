@@ -8,11 +8,20 @@ import { sepolia, ethereum, polygon, arbitrum } from "thirdweb/chains";
 // ─── Client ────────────────────────────────────────────────────────────────
 const clientId = import.meta.env.VITE_THIRDWEB_CLIENT_ID;
 
-if (!clientId) {
-  console.warn(
-    "[ChainShield] VITE_THIRDWEB_CLIENT_ID is not set.\n" +
-    "  Social login (Google/Apple/Email) will not work.\n" +
-    "  Get a free Client ID at: https://thirdweb.com/dashboard"
+/**
+ * Whether a real thirdweb client ID is configured. Thirdweb's hosted social
+ * login + embedded-wallet service require one. When it's absent we fall back to
+ * the local demo wallet (see lib/demoWallet.ts) so the app still works fully.
+ */
+export const hasThirdwebClientId =
+  !!clientId && clientId !== "placeholder_client_id";
+
+if (!hasThirdwebClientId) {
+  console.info(
+    "[ChainShield] No VITE_THIRDWEB_CLIENT_ID set — using the built-in demo wallet.\n" +
+    "  Click \"Continue with Google\" to instantly create a local demo account.\n" +
+    "  For real social login + on-chain wallets, add a free Client ID from:\n" +
+    "  https://thirdweb.com/dashboard"
   );
 }
 

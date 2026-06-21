@@ -1,5 +1,7 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation, type MutationCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 
 const claimStatus = v.union(
   v.literal("Submitted"),
@@ -132,10 +134,14 @@ export const createClaim = mutation({
     evidenceCids: v.array(v.string()),
     txHashSubmitted: v.optional(v.string()),
     onchainClaimId: v.optional(v.number()),
+    // When true (demo mode), the claim is run through a simulated oracle +
+    // auto-approval pipeline via scheduled functions so the lifecycle is
+    // observable in realtime. Defaults to true.
+    simulate: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const { onchainClaimId, ...restArgs } = args;
+    const { onchainClaimId, simulate, ...restArgs } = args;
     const id = await ctx.db.insert("claims", {
       ...restArgs,
       claimant: args.claimant.toLowerCase(),
@@ -147,9 +153,184 @@ export const createClaim = mutation({
       createdAt: now,
       updatedAt: now,
     });
+
+    // System message on the claim thread
+    await ctx.db.insert("claimMessages", {
+      claimId: id,
+      senderWallet: "system",
+      senderRole: "system",
+      message: "Claim received and queued for verification.",
+      createdAt: now,
+    });
+
+    // Notify the claimant
+    await ctx.db.insert("notifications", {
+      walletAddress: args.claimant.toLowerCase(),
+      type: "claim_update",
+      title: "Claim submitted",
+      body: "Your claim has been received and is now being verified.",
+      isRead: false,
+      metadata: { claimId: id },
+      actionUrl: "/claims",
+      createdAt: now,
+    });
+
+    // Demo simulation: drive the claim through the oracle pipeline.
+    if (simulate !== false) {
+      await ctx.scheduler.runAfter(6000, internal.claims.runDemoOracleCheck, { claimId: id });
+    }
+
     return id;
   },
 });
+
+// ─── Demo Oracle Simulation (scheduled) ──────────────────────────────────────
+
+const AUTO_APPROVE_THRESHOLD_USD = 5_000;
+
+/** Step 1: move claim into oracle verification and compute a verdict. */
+export const runDemoOracleCheck = internalMutation({
+  args: { claimId: v.id("claims") },
+  handler: async (ctx, { claimId }) => {
+    const claim = await ctx.db.get(claimId);
+    if (!claim || claim.status !== "Submitted") return;
+
+    const now = Date.now();
+    const isDeFi = claim.claimType.toLowerCase().includes("defi");
+
+    // Non-DeFi claims can't be verified by the on-chain oracle.
+    const verdict: "pass" | "fail" | "n/a" = isDeFi
+      ? Math.random() < 0.8
+        ? "pass"
+        : "fail"
+      : "n/a";
+
+    await ctx.db.patch(claimId, {
+      status: "Oracle check",
+      oracleVerdict: verdict,
+      updatedAt: now,
+    });
+
+    await ctx.db.insert("claimMessages", {
+      claimId,
+      senderWallet: "system",
+      senderRole: "system",
+      message: isDeFi
+        ? `Oracle verification in progress for ${claim.protocolName ?? "the affected protocol"}.`
+        : "Routing claim to a human reviewer (off-chain evidence required).",
+      createdAt: now,
+    });
+
+    await ctx.scheduler.runAfter(6000, internal.claims.resolveDemoOracle, { claimId });
+  },
+});
+
+/** Step 2: resolve the verdict into auto-approval or manual review. */
+export const resolveDemoOracle = internalMutation({
+  args: { claimId: v.id("claims") },
+  handler: async (ctx, { claimId }) => {
+    const claim = await ctx.db.get(claimId);
+    if (!claim || claim.status !== "Oracle check") return;
+
+    const now = Date.now();
+    const isDeFi = claim.claimType.toLowerCase().includes("defi");
+    const confirmed = claim.oracleVerdict === "pass";
+    const small = claim.requestedAmountUsd < AUTO_APPROVE_THRESHOLD_USD;
+
+    if (isDeFi && confirmed && small) {
+      // Auto-approve small, oracle-confirmed DeFi claims.
+      await ctx.db.patch(claimId, {
+        status: "Auto-approved",
+        approvedAmountUsd: claim.requestedAmountUsd,
+        decisionReason: "Oracle confirmed the incident and the amount is below the auto-approval threshold.",
+        reviewCompletedAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("claimMessages", {
+        claimId,
+        senderWallet: "system",
+        senderRole: "system",
+        message: `Auto-approved for $${claim.requestedAmountUsd.toLocaleString()}. Payout is being processed.`,
+        createdAt: now,
+      });
+      await notifyClaimant(ctx, claim.claimant, claimId, "Claim auto-approved", "Your claim was approved automatically. Payout is on the way.");
+      await ctx.scheduler.runAfter(5000, internal.claims.payoutDemoClaim, { claimId });
+    } else {
+      // Everything else goes to a human reviewer.
+      const reason = !isDeFi
+        ? "Off-chain claim requires manual review."
+        : !confirmed
+          ? "Oracle could not confirm the incident; escalating to manual review."
+          : "Claim amount exceeds the auto-approval threshold; escalating to manual review.";
+      await ctx.db.patch(claimId, {
+        status: "Manual review",
+        reviewStartedAt: now,
+        appealDeadline: now + 14 * 24 * 60 * 60 * 1000,
+        updatedAt: now,
+      });
+      await ctx.db.insert("claimMessages", {
+        claimId,
+        senderWallet: "system",
+        senderRole: "system",
+        message: reason,
+        createdAt: now,
+      });
+      await notifyClaimant(ctx, claim.claimant, claimId, "Claim under review", reason);
+    }
+  },
+});
+
+/** Step 3: mark an auto-approved claim as paid. */
+export const payoutDemoClaim = internalMutation({
+  args: { claimId: v.id("claims") },
+  handler: async (ctx, { claimId }) => {
+    const claim = await ctx.db.get(claimId);
+    if (!claim || claim.status !== "Auto-approved") return;
+
+    const now = Date.now();
+    const payoutTxHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("")}`;
+
+    await ctx.db.patch(claimId, {
+      status: "Paid",
+      payoutTxHash,
+      updatedAt: now,
+    });
+
+    // Mark the underlying policy as claimed.
+    const policy = await ctx.db.get(claim.policyId);
+    if (policy && policy.status === "active") {
+      await ctx.db.patch(claim.policyId, { status: "claimed" });
+    }
+
+    await ctx.db.insert("claimMessages", {
+      claimId,
+      senderWallet: "system",
+      senderRole: "system",
+      message: `Payout of $${(claim.approvedAmountUsd ?? claim.requestedAmountUsd).toLocaleString()} sent. Tx: ${payoutTxHash.slice(0, 10)}…`,
+      createdAt: now,
+    });
+    await notifyClaimant(ctx, claim.claimant, claimId, "Payout sent", "Your claim payout has been transferred to your wallet.");
+  },
+});
+
+async function notifyClaimant(
+  ctx: MutationCtx,
+  claimant: string,
+  claimId: Id<"claims">,
+  title: string,
+  body: string
+) {
+  await ctx.db.insert("notifications", {
+    walletAddress: claimant.toLowerCase(),
+    type: "claim_update",
+    title,
+    body,
+    isRead: false,
+    metadata: { claimId },
+    actionUrl: "/claims",
+    createdAt: Date.now(),
+  });
+}
 
 export const updateClaimStatus = mutation({
   args: {

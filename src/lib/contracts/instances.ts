@@ -8,17 +8,38 @@ import { CHAIN_SHIELD_TOKEN_ABI } from "./abis/ChainShieldToken";
 import { L_P_TOKEN_ABI as LP_TOKEN_ABI } from "./abis/LPToken";
 import { CHAIN_SHIELD_GOVERNOR_ABI } from "./abis/ChainShieldGovernor";
 
-// Resolve addresses from environment variables or fall back to mock addresses for safety
+// Resolve addresses from environment variables, falling back to (valid,
+// lowercase) placeholder addresses. Placeholders must be lowercase so they pass
+// thirdweb's EIP-55 checksum validation — a mixed-case invalid checksum makes
+// getContract() throw at module load and crashes any page that imports this file
+// (this is what previously broke the Claims and Stake pages in demo mode).
+const PLACEHOLDERS = {
+  POLICY_MANAGER: "0x1234567890abcdef1234567890abcdef12345678",
+  INSURANCE_POOL: "0xabcdef0123456789abcdef0123456789abcdef01",
+  CLAIMS_PROCESSOR: "0x9876543210fedcba9876543210fedcba98765432",
+  CST_TOKEN: "0x1111111111111111111111111111111111111111",
+  LP_TOKEN: "0x2222222222222222222222222222222222222222",
+  GOVERNOR: "0x3333333333333333333333333333333333333333",
+} as const;
+
+/** Normalize an env address; fall back to the placeholder if missing or malformed. */
+function resolveAddress(envValue: string | undefined, placeholder: string): string {
+  const v = (envValue ?? "").trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(v)) return placeholder;
+  return v;
+}
+
 export const CONTRACT_ADDRESSES = {
-  POLICY_MANAGER: (import.meta.env.VITE_POLICY_MANAGER_ADDRESS || "0x1234567890AbcdEF1234567890AbCdef12345678") as string,
-  INSURANCE_POOL: (import.meta.env.VITE_INSURANCE_POOL_ADDRESS || "0xAbCdEf0123456789AbCdEf0123456789AbCdEf01") as string,
-  CLAIMS_PROCESSOR: (import.meta.env.VITE_CLAIMS_PROCESSOR_ADDRESS || "0x9876543210fEdCbA9876543210FeDcBa98765432") as string,
-  CST_TOKEN: (import.meta.env.VITE_CST_TOKEN_ADDRESS || "0x1111111111111111111111111111111111111111") as string,
-  LP_TOKEN: (import.meta.env.VITE_LP_TOKEN_ADDRESS || "0x2222222222222222222222222222222222222222") as string,
-  GOVERNOR: (import.meta.env.VITE_GOVERNOR_ADDRESS || "0x3333333333333333333333333333333333333333") as string,
+  POLICY_MANAGER: resolveAddress(import.meta.env.VITE_POLICY_MANAGER_ADDRESS, PLACEHOLDERS.POLICY_MANAGER),
+  INSURANCE_POOL: resolveAddress(import.meta.env.VITE_INSURANCE_POOL_ADDRESS, PLACEHOLDERS.INSURANCE_POOL),
+  CLAIMS_PROCESSOR: resolveAddress(import.meta.env.VITE_CLAIMS_PROCESSOR_ADDRESS, PLACEHOLDERS.CLAIMS_PROCESSOR),
+  CST_TOKEN: resolveAddress(import.meta.env.VITE_CST_TOKEN_ADDRESS, PLACEHOLDERS.CST_TOKEN),
+  LP_TOKEN: resolveAddress(import.meta.env.VITE_LP_TOKEN_ADDRESS, PLACEHOLDERS.LP_TOKEN),
+  GOVERNOR: resolveAddress(import.meta.env.VITE_GOVERNOR_ADDRESS, PLACEHOLDERS.GOVERNOR),
 };
 
-// Strongly-typed Thirdweb v5 contract instances
+// Strongly-typed Thirdweb v5 contract instances. Addresses are guaranteed valid
+// by resolveAddress() above, so getContract() will not throw at module load.
 export const policyManagerContract = getContract({
   client,
   chain: sepolia,
